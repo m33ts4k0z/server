@@ -28,7 +28,7 @@ import { initStats } from "./stats";
 import { config } from "dotenv";
 
 config({ quiet: true });
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import { centerString, Logo } from "@spacebar/util";
 import fs from "fs";
 import path from "path";

@@ -1,0 +1,43 @@
+# Spacebar server + PostgreSQL
+# Variables are loaded from .env in this directory (copy .env.example to .env).
+# Server uses host network and connects to postgres at 127.0.0.1:5432
+# Build the image first: docker build -t spacebar-server .
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spacebar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spacebar_password}
+      POSTGRES_DB: ${POSTGRES_DB:-spacebar}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spacebar} -d ${POSTGRES_DB:-spacebar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  server:
+    image: spacebar-server
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${SPACEBAR_DATA_PATH:-./data}:/spacebar/data
+    environment:
+      CONFIG_PATH: /spacebar/data/config.json
+      DATABASE: postgres://${POSTGRES_USER:-spacebar}:${POSTGRES_PASSWORD:-spacebar_password}@127.0.0.1:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-spacebar}
+      WRTC_LIBRARY: "@spacebarchat/mediasoup-webrtc"
+      WRTC_PUBLIC_IP: ${WRTC_PUBLIC_IP:-127.0.0.1}
+      WRTC_PORT_MIN: ${WRTC_PORT_MIN:-10020}
+      WRTC_PORT_MAX: ${WRTC_PORT_MAX:-10100}
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

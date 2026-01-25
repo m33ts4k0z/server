@@ -30,17 +30,6 @@
             }
         },
         "schemas": {
-            "CreateFingerprintResponse": {
-                "type": "object",
-                "properties": {
-                    "fingerprint": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "fingerprint"
-                ]
-            },
             "ApplicationCommandSchema": {
                 "type": "object",
                 "properties": {
@@ -203,6 +192,118 @@
                     "code",
                     "errors",
                     "message"
+                ]
+            },
+            "StopForumSpamResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "enum": [
+                            0,
+                            1
+                        ],
+                        "type": "number"
+                    },
+                    "ip": {
+                        "type": "object",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "appears": {
+                                "enum": [
+                                    0,
+                                    1
+                                ],
+                                "type": "number"
+                            },
+                            "lastseen": {
+                                "type": "string"
+                            },
+                            "frequency": {
+                                "type": "integer"
+                            },
+                            "confidence": {
+                                "type": "integer"
+                            },
+                            "delegated": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "appears",
+                            "delegated",
+                            "frequency",
+                            "lastseen",
+                            "value"
+                        ]
+                    },
+                    "email": {
+                        "type": "object",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "appears": {
+                                "enum": [
+                                    0,
+                                    1
+                                ],
+                                "type": "number"
+                            },
+                            "lastseen": {
+                                "type": "string"
+                            },
+                            "frequency": {
+                                "type": "integer"
+                            },
+                            "confidence": {
+                                "type": "integer"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "appears",
+                            "frequency",
+                            "lastseen",
+                            "value"
+                        ]
+                    },
+                    "username": {
+                        "type": "object",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "appears": {
+                                "enum": [
+                                    0,
+                                    1
+                                ],
+                                "type": "number"
+                            },
+                            "lastseen": {
+                                "type": "string"
+                            },
+                            "frequency": {
+                                "type": "integer"
+                            },
+                            "confidence": {
+                                "type": "integer"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "appears",
+                            "frequency",
+                            "lastseen",
+                            "value"
+                        ]
+                    }
+                },
+                "required": [
+                    "success"
                 ]
             },
             "InteractionSchema": {
@@ -2772,15 +2873,15 @@
             "APIPrivateUser": {
                 "type": "object",
                 "properties": {
-                    "email": {
-                        "type": "string"
-                    },
                     "id": {
                         "description": "A Twitter-like snowflake, except the epoch is 2015-01-01T00:00:00.000Z\n```\nIf we have a snowflake '266241948824764416' we can represent it as binary:\n\n64                                          22     17     12          0\n 000000111011000111100001101001000101000000  00001  00000  000000000000\n      number of ms since Discord epoch       worker  pid    increment\n```",
                         "type": "string"
                     },
                     "flags": {
                         "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
                     },
                     "verified": {
                         "type": "boolean"
@@ -2899,15 +3000,15 @@
                     "newToken": {
                         "type": "string"
                     },
-                    "email": {
-                        "type": "string"
-                    },
                     "id": {
                         "description": "A Twitter-like snowflake, except the epoch is 2015-01-01T00:00:00.000Z\n```\nIf we have a snowflake '266241948824764416' we can represent it as binary:\n\n64                                          22     17     12          0\n 000000111011000111100001101001000101000000  00001  00000  000000000000\n      number of ms since Discord epoch       worker  pid    increment\n```",
                         "type": "string"
                     },
                     "flags": {
                         "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
                     },
                     "verified": {
                         "type": "boolean"
@@ -6806,6 +6907,17 @@
                 },
                 "required": [
                     "user_sessions"
+                ]
+            },
+            "CreateFingerprintResponse": {
+                "type": "object",
+                "properties": {
+                    "fingerprint": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "fingerprint"
                 ]
             },
             "ApplicationCommandOption": {
@@ -12214,7 +12326,7 @@
                             "length": {
                                 "type": "integer"
                             },
-                            "__@unscopables@698": {
+                            "__@unscopables@703": {
                                 "type": "object",
                                 "additionalProperties": false,
                                 "patternProperties": {
@@ -12343,17 +12455,17 @@
                                     "remove": {
                                         "type": "boolean"
                                     },
-                                    "__@iterator@696": {
+                                    "__@iterator@670": {
                                         "type": "boolean"
                                     },
-                                    "__@unscopables@698": {
+                                    "__@unscopables@703": {
                                         "type": "boolean"
                                     }
                                 }
                             }
                         },
                         "required": [
-                            "__@unscopables@698",
+                            "__@unscopables@703",
                             "length"
                         ]
                     },

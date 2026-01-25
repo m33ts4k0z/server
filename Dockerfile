@@ -19,14 +19,16 @@ COPY --from=base_python /usr/local/lib/python* /usr/local/lib/
 COPY --from=base_python /usr/local/lib/libpython* /usr/local/lib/
 
 
-FROM base AS builder
+FROM node:${NODE_VERSION}-${DEBIAN_CODE}-slim AS builder
 
 ARG BRANCH
+ARG NODE_VERSION
 
 WORKDIR /build
 
+# Install build tools - use system Python, not the copied one
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential pkg-config && \
+    apt-get install -y --no-install-recommends build-essential pkg-config git python3 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build/server
@@ -45,6 +47,11 @@ ARG USER_UID
 ARG USER_GID
 ARG BASEDIR
 
+# Install build tools for runtime native module compilation
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p "${BASEDIR}/server" \
     && chown -R "${USER_UID}:${USER_GID}" "${BASEDIR}"
 
@@ -57,8 +64,10 @@ RUN deluser node 2>/dev/null || true \
         --gecos "" \
         --uid "$USER_UID" \
         --gid "$USER_GID" \
-        --no-create-home \
-        "$USER_NAME"
+        --home "/home/$USER_NAME" \
+        "$USER_NAME" \
+    && mkdir -p "/home/$USER_NAME/.npm" \
+    && chown -R "$USER_UID:$USER_GID" "/home/$USER_NAME"
 
 USER ${USER_NAME}
 

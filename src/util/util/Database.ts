@@ -35,7 +35,8 @@ if (!process.env) {
     isHeadlessProcess = true;
     config({ quiet: true });
 }
-if (process.argv[1]?.endsWith("scripts/openapi.js")) isHeadlessProcess = true;
+// scripts/openapi.js and scripts\openapi.js (Windows); skip DB init and sqlite check
+if (process.argv[1]?.includes("openapi.js")) isHeadlessProcess = true;
 
 const dbConnectionString = process.env.DATABASE || path.join(process.cwd(), "database.db");
 

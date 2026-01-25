@@ -42,7 +42,6 @@ class NoConfiguredLibraryError implements Error {
 
 export const loadWebRtcLibrary = async () => {
     try {
-        //mediaServer = require('medooze-spacebar-wrtc');
         if (!selectedWrtcLibrary) throw new NoConfiguredLibraryError("No library configured in .env");
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment

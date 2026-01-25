@@ -26,8 +26,7 @@
           WRTC_PUBLIC_IP = "216.230.228.19";
           WRTC_PORT_MIN = 60000;
           WRTC_PORT_MAX = 65000;
-          WRTC_LIBRARY = "@spacebarchat/medooze-webrtc";
-          #WRTC_LIBRARY=mediasoup-spacebar-wrtc;
+          WRTC_LIBRARY = "@spacebarchat/mediasoup-webrtc";
         };
       };
     in

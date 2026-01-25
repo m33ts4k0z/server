@@ -27,16 +27,11 @@ import { Close } from "./Close";
 import { Message } from "./Message";
 import { Deflate, Inflate } from "fast-zlib";
 import { URL } from "url";
-import { Config, ErlpackType } from "@spacebar/util";
+import { Config, getErlpack } from "@spacebar/util";
 import zlib from "node:zlib";
 import { Decoder, Encoder } from "@toondepauw/node-zstd";
 
-let erlpack: ErlpackType | null = null;
-try {
-    erlpack = require("@yukikaze-bot/erlpack") as ErlpackType;
-} catch (e) {
-    console.log("Failed to import @yukikaze-bot/erlpack: ", e);
-}
+const erlpack = getErlpack();
 
 // TODO: check rate limit
 // TODO: specify rate limit in config
@@ -102,7 +97,7 @@ export async function Connection(this: WS.Server, socket: WebSocket, request: In
             return socket.close(CLOSECODES.Decode_error);
         }
 
-        if (socket.encoding === "etf" && !erlpack) throw new Error("Erlpack is not installed: 'npm i @yukikaze-bot/erlpack'");
+        if (socket.encoding === "etf" && !erlpack) throw new Error("ETF encoding is not available (erlpack and wetf could not be loaded).");
 
         socket.version = Number(searchParams.get("version")) || 8;
         if (socket.version != 8) {

@@ -17,7 +17,7 @@
 */
 
 import { CLOSECODES, OPCODES, Payload, WebSocket } from "@spacebar/gateway";
-import { ErlpackType } from "@spacebar/util";
+import { getErlpack } from "@spacebar/util";
 import fs from "fs/promises";
 import BigIntJson from "json-bigint";
 import path from "path";
@@ -27,13 +27,7 @@ import { check } from "../opcodes/instanceOf";
 import { PayloadSchema } from "@spacebar/schemas";
 
 const bigIntJson = BigIntJson({ storeAsString: true });
-
-let erlpack: ErlpackType | null = null;
-try {
-    erlpack = require("@yukikaze-bot/erlpack") as ErlpackType;
-} catch (e) {
-    console.log("Failed to import @yukikaze-bot/erlpack: ", e);
-}
+const erlpack = getErlpack();
 
 export async function Message(this: WebSocket, buffer: WS.Data) {
     // TODO: compression
