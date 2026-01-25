@@ -33,7 +33,7 @@ This repository contains:
 - [HTTP CDN Server](/src/cdn)
 - [WebRTC Server](/src/webrtc)
 - [Utility and Database Models](/src/util)
-- [Spacebar Admin API (C#)](/extra/admin-api) (Emma [it/its]@Rory& was here)
+- Admin API is built into the Node API at `/_spacebar/admin` (OPERATOR-gated)
 
 ## [Documentation](https://docs.spacebar.chat)
 

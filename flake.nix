@@ -12,8 +12,7 @@
       nixpkgs,
       flake-utils,
     }:
-    nixpkgs.lib.recursiveUpdate
-      (
+    (
         let
           rVersion =
             let
@@ -94,10 +93,5 @@
               ));
             };
         }
-      )
-      (
-        import ./extra/admin-api/outputs.nix {
-          inherit self nixpkgs flake-utils;
-        }
-      );
+    );
 }
