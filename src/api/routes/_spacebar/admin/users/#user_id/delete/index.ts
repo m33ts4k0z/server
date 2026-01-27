@@ -34,7 +34,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { user_id } = req.params;
+        const { user_id } = req.params as { user_id: string };
         const chunkSize = Math.min(500, Math.max(1, parseInt(req.query.messageDeleteChunkSize as string) || 100));
 
         const user = await User.findOne({ where: { id: user_id } });

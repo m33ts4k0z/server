@@ -33,7 +33,8 @@ router.post(
     }),
     async (req: Request, res: Response) => {
         await Config.init(true);
-        await emitEvent({ event: "SB_RELOAD_CONFIG", guild_id: "spacebar", data: {} });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Custom Spacebar event not in Discord types
+        await emitEvent({ event: "SB_RELOAD_CONFIG" as any, guild_id: "spacebar", data: {} });
         res.sendStatus(200);
     },
 );

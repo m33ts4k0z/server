@@ -46,10 +46,10 @@ export function createBasicCrdFileRouter(opts: BasicCrdFileRouterOptions) {
     const router = Router({ mergeParams: true });
 
     router.post("/:user_id", multer.single("file"), async (req: Request, res: Response) => {
+        const { user_id } = req.params as { user_id: string };
         if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
         if (!req.file) throw new HTTPError("Missing file");
         const { buffer, size } = req.file;
-        const { user_id } = req.params;
 
         let hash = crypto.createHash("md5").update(Snowflake.generate()).digest("hex");
 
@@ -71,8 +71,8 @@ export function createBasicCrdFileRouter(opts: BasicCrdFileRouterOptions) {
     });
 
     router.get("/:user_id", async (req: Request, res: Response) => {
-        let { user_id } = req.params;
-        user_id = user_id.split(".")[0]; // remove .file extension
+        const { user_id: user_id_raw } = req.params as { user_id: string };
+        const user_id = user_id_raw.split(".")[0]; // remove .file extension
         const path = `${opts.pathPrefix}/${user_id}`;
 
         const file = await storage.get(path);
@@ -86,9 +86,8 @@ export function createBasicCrdFileRouter(opts: BasicCrdFileRouterOptions) {
     });
 
     const getAvatar = async (req: Request, res: Response) => {
-        const { user_id } = req.params;
-        let { hash } = req.params;
-        hash = hash.split(".")[0]; // remove .file extension
+        const { user_id, hash: hash_raw } = req.params as { user_id: string; hash: string };
+        const hash = hash_raw.split(".")[0]; // remove .file extension
         const path = `${opts.pathPrefix}/${user_id}/${hash}`;
 
         const file = await storage.get(path);
@@ -104,8 +103,8 @@ export function createBasicCrdFileRouter(opts: BasicCrdFileRouterOptions) {
     router.get("/:user_id/:hash", getAvatar);
 
     router.delete("/:user_id/:hash", async (req: Request, res: Response) => {
+        const { user_id, hash } = req.params as { user_id: string; hash: string };
         if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
-        const { user_id, hash } = req.params;
         const path = `${opts.pathPrefix}/${user_id}/${hash}`;
 
         await storage.delete(path);

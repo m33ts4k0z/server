@@ -36,10 +36,10 @@ const ALLOWED_MIME_TYPES = [...ANIMATED_MIME_TYPES, ...STATIC_MIME_TYPES];
 const router = Router({ mergeParams: true });
 
 router.post("/", multer.single("file"), async (req: Request, res: Response) => {
+    const { guild_id, user_id } = req.params as { guild_id: string; user_id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
     if (!req.file) throw new HTTPError("Missing file");
     const { buffer, size } = req.file;
-    const { guild_id, user_id } = req.params;
 
     let hash = crypto.createHash("md5").update(Snowflake.generate()).digest("hex");
 
@@ -61,9 +61,8 @@ router.post("/", multer.single("file"), async (req: Request, res: Response) => {
 });
 
 router.get("/", async (req: Request, res: Response) => {
-    const { guild_id } = req.params;
-    let { user_id } = req.params;
-    user_id = user_id.split(".")[0]; // remove .file extension
+    const { guild_id, user_id: user_id_raw } = req.params as { guild_id: string; user_id: string };
+    const user_id = user_id_raw.split(".")[0]; // remove .file extension
     const path = `guilds/${guild_id}/users/${user_id}/avatars`;
 
     const file = await storage.get(path);
@@ -77,9 +76,8 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 router.get("/:hash", async (req: Request, res: Response) => {
-    const { guild_id, user_id } = req.params;
-    let { hash } = req.params;
-    hash = hash.split(".")[0]; // remove .file extension
+    const { guild_id, user_id, hash: hash_raw } = req.params as { guild_id: string; user_id: string; hash: string };
+    const hash = hash_raw.split(".")[0]; // remove .file extension
     const path = `guilds/${guild_id}/users/${user_id}/avatars/${hash}`;
 
     const file = await storage.get(path);
@@ -93,8 +91,8 @@ router.get("/:hash", async (req: Request, res: Response) => {
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
+    const { guild_id, user_id, id } = req.params as { guild_id: string; user_id: string; id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
-    const { guild_id, user_id, id } = req.params;
     const path = `guilds/${guild_id}/users/${user_id}/avatars/${id}`;
 
     await storage.delete(path);

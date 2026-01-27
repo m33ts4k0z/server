@@ -59,8 +59,8 @@ async function getFile(path: string) {
 }
 
 router.get("/avatars/:id", async (req: Request, res: Response) => {
-    let { id } = req.params;
-    id = id.split(".")[0]; // remove .file extension
+    const { id: id_raw } = req.params as { id: string };
+    const id = id_raw.split(".")[0]; // remove .file extension
     const hash = defaultAvatarHashMap.get(id);
     if (!hash) throw new HTTPError("not found", 404);
     const path = join(__dirname, "..", "..", "..", "assets", "public", `${hash}.png`);
@@ -76,8 +76,8 @@ router.get("/avatars/:id", async (req: Request, res: Response) => {
 });
 
 router.get("/group-avatars/:id", async (req: Request, res: Response) => {
-    let { id } = req.params;
-    id = id.split(".")[0]; // remove .file extension
+    const { id: id_raw } = req.params as { id: string };
+    const id = id_raw.split(".")[0]; // remove .file extension
     const hash = defaultGroupDMAvatarHashMap.get(id);
     if (!hash) throw new HTTPError("not found", 404);
     const path = join(__dirname, "..", "..", "..", "assets", "public", `${hash}.png`);

@@ -34,7 +34,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params;
+        const { guild_id } = req.params as { guild_id: string };
         const body = (req.body || {}) as { user_id?: string; make_owner?: boolean; make_admin?: boolean };
         const user_id = body.user_id ?? req.user_id!;
 

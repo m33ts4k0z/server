@@ -36,7 +36,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params;
+        const { guild_id } = req.params as { guild_id: string };
 
         await Member.IsInGuildOrFail(req.user_id, guild_id);
 
@@ -65,7 +65,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id, emoji_id } = req.params;
+        const { guild_id, emoji_id } = req.params as { guild_id: string; emoji_id: string };
 
         await Member.IsInGuildOrFail(req.user_id, guild_id);
 
@@ -96,7 +96,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params;
+        const { guild_id } = req.params as { guild_id: string };
         const body = req.body as EmojiCreateSchema;
 
         const id = Snowflake.generate();
@@ -152,7 +152,7 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { emoji_id, guild_id } = req.params;
+        const { emoji_id, guild_id } = req.params as { emoji_id: string; guild_id: string };
         const body = req.body as EmojiModifySchema;
 
         const emoji = await Emoji.create({
@@ -186,7 +186,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { emoji_id, guild_id } = req.params;
+        const { emoji_id, guild_id } = req.params as { emoji_id: string; guild_id: string };
 
         await Emoji.delete({
             id: emoji_id,

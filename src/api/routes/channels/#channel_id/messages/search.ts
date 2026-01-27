@@ -42,9 +42,9 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params;
+        const { channel_id, guild_id } = req.params as { channel_id: string; guild_id: string };
         const channel = await Channel.findOneOrFail({
-            where: { guild_id: req.params.guild_id },
+            where: { guild_id },
             select: { id: true },
         });
         const {

@@ -51,7 +51,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params;
+        const { guild_id } = req.params as { guild_id: string };
 
         let cacheEntry = jsonDataCache.get(guild_id);
         if (!cacheEntry || cacheEntry.expiry.getTime() < Date.now()) {

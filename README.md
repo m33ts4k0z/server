@@ -130,9 +130,7 @@ Installer: `Fermi/release/`. See [Fermi/DESKTOP_BUILD.md](../Fermi/DESKTOP_BUILD
 
 ### Testing ETF encoding
 
-The gateway supports **ETF** (Erlang Term Format) for smaller, faster payloads. ETF uses `@yukikaze-bot/erlpack` (native, optional) when available, and **wetf** (pure-JS) as a fallback, so ETF works even without the native build.
-
-1. **Server** – If you see `ETF: using wetf (pure-JS); @yukikaze-bot/erlpack not available.`, the native optional dep is missing; ETF still works via wetf. To use the native implementation: `npm i @yukikaze-bot/erlpack`.
+The gateway supports **ETF** (Erlang Term Format) for smaller, faster payloads. ETF uses **wetf** (pure-JS) as the primary implementation. Optionally, `@yukikaze-bot/erlpack` (native) may be used if available, but wetf is the preferred and default implementation.
 
 2. **Script** – With the server running, from `server/`:
    ```bash

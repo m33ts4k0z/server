@@ -35,38 +35,29 @@ if (!process.env) {
     isHeadlessProcess = true;
     config({ quiet: true });
 }
-// scripts/openapi.js and scripts\openapi.js (Windows); skip DB init and sqlite check
+// scripts/openapi.js and scripts\openapi.js (Windows); skip DB init
 if (process.argv[1]?.includes("openapi.js")) isHeadlessProcess = true;
+// scripts/rights.js doesn't need database
+if (process.argv[1]?.includes("rights.js")) isHeadlessProcess = true;
 
-const dbConnectionString = process.env.DATABASE || path.join(process.cwd(), "database.db");
-
-export const DatabaseType = dbConnectionString.includes("://") ? dbConnectionString.split(":")[0]?.replace("+srv", "") : "sqlite";
-const isSqlite = DatabaseType.includes("sqlite");
-
-// For openapi.js...
-if (!isHeadlessProcess) {
-    let hasWarnedSqlite = false;
-    if (isSqlite && !hasWarnedSqlite) {
-        hasWarnedSqlite = true;
-        console.log(`[Database] ${red(`You are running sqlite! Please keep in mind that we recommend setting up a dedicated database!`)}`);
-        try {
-            const _ = require("sqlite3");
-        } catch (e) {
-            console.log(`[Database] ${red(`Failed to load sqlite3 package. Please install it with 'npm install --no-save sqlite3', or switch to a real database like Postgres.`)}`);
-            process.exit(1);
-        }
-    }
+const dbConnectionString = process.env.DATABASE;
+if (!dbConnectionString && !isHeadlessProcess) {
+    console.log(
+        `[Database] ${red(`DATABASE environment variable is required. Please set it to a PostgreSQL connection string (e.g., postgres://user:password@host:port/database)`)}`,
+    );
+    process.exit(1);
 }
+
+export const DatabaseType = dbConnectionString?.includes("://") ? dbConnectionString.split(":")[0]?.replace("+srv", "") : "postgres";
 
 export const DataSourceOptions = isHeadlessProcess
     ? (undefined as unknown as DataSource)
     : new DataSource({
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore type 'string' is not 'sqlite' | 'postgres' | etc etc
+          //@ts-ignore type 'string' is not 'postgres' | etc etc
           type: DatabaseType,
           charset: "utf8mb4",
-          url: isSqlite ? undefined : dbConnectionString,
-          database: isSqlite ? dbConnectionString : undefined,
+          url: dbConnectionString!,
           entities: [path.join(__dirname, "..", "entities", "*.js")],
           synchronize: !!process.env.DB_SYNC,
           logging: !!process.env.DB_LOGGING,
@@ -87,13 +78,20 @@ export function getDatabase(): DataSource | null {
 export async function initDatabase(): Promise<DataSource> {
     if (dbConnection) return dbConnection;
 
+    if (!dbConnectionString) {
+        console.log(
+            `[Database] ${red(`DATABASE environment variable is required. Please set it to a PostgreSQL connection string (e.g., postgres://user:password@host:port/database)`)}`,
+        );
+        process.exit(1);
+    }
+
     if (!process.env.DB_SYNC) {
-        const supported = ["postgres", "sqlite"];
+        const supported = ["postgres"];
         if (!supported.includes(DatabaseType)) {
             console.log(
                 "[Database]" +
                     red(
-                        ` We don't have migrations for DB type '${DatabaseType}'` +
+                        ` We don't have migrations for DB type '${DatabaseType}'. Only PostgreSQL is supported.` +
                             ` To ignore, set DB_SYNC=true in your env. https://docs.spacebar.chat/setup/server/configuration/env/`,
                     ),
             );
@@ -104,13 +102,6 @@ export async function initDatabase(): Promise<DataSource> {
     console.log(`[Database] ${yellow(`Connecting to ${DatabaseType} db`)}`);
 
     dbConnection = await DataSourceOptions.initialize();
-
-    if (DatabaseType === "sqlite") {
-        console.log(`[Database] ${yellow("Warning: SQLite is not supported. Forcing sync, this may lead to data loss!")}`);
-        await dbConnection.synchronize();
-        console.log(`[Database] ${green("Connected")}`);
-        return dbConnection;
-    }
 
     // Crude way of detecting if the migrations table exists.
     const dbExists = async () => {

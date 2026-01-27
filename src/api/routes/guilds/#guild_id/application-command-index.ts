@@ -25,7 +25,8 @@ import { ApplicationCommandSchema, ApplicationCommandType } from "@spacebar/sche
 const router = Router({ mergeParams: true });
 
 router.get("/", route({}), async (req: Request, res: Response) => {
-    const members = await Member.find({ where: { guild_id: req.params.guild_id, user: { bot: true } } });
+    const guild_id = req.params.guild_id as string;
+    const members = await Member.find({ where: { guild_id, user: { bot: true } } });
     const applications: Application[] = [];
 
     for (const member of members) {
@@ -50,7 +51,7 @@ router.get("/", route({}), async (req: Request, res: Response) => {
 
     for (const application of applications) {
         applicationCommands.push(await ApplicationCommand.find({ where: { application_id: application.id, guild_id: IsNull() } }));
-        applicationCommands.push(await ApplicationCommand.find({ where: { application_id: application.id, guild_id: req.params.guild_id } }));
+        applicationCommands.push(await ApplicationCommand.find({ where: { application_id: application.id, guild_id } }));
     }
 
     const applicationCommandsSendable: ApplicationCommandSchema[] = [];

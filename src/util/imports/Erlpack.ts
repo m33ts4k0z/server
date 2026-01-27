@@ -14,8 +14,8 @@ export type ErlpackType = {
 let _cached: ErlpackType | null | undefined = undefined;
 
 /**
- * Returns an ETF pack/unpack implementation. Tries @yukikaze-bot/erlpack (native) first;
- * if unavailable, uses wetf (pure-JS) so ETF works without the node-pre-gyp/npmlog chain.
+ * Returns an ETF pack/unpack implementation. Uses wetf (pure-JS) as the primary implementation.
+ * Optionally tries @yukikaze-bot/erlpack (native) first if available, but falls back to wetf.
  */
 export function getErlpack(): ErlpackType | null {
     if (_cached !== undefined) return _cached;
@@ -23,7 +23,7 @@ export function getErlpack(): ErlpackType | null {
         _cached = require("@yukikaze-bot/erlpack") as ErlpackType;
         return _cached;
     } catch {
-        // native erlpack not available (optionalDep skipped or build failed); use pure-JS wetf
+        // native erlpack not available; use pure-JS wetf (preferred implementation)
     }
     try {
         const { Packer, Unpacker } = require("wetf");
@@ -33,10 +33,10 @@ export function getErlpack(): ErlpackType | null {
             pack: (d: any) => Buffer.from(packer.pack(d)),
             unpack: (b: Buffer) => unpacker.unpack(b) as any,
         };
-        console.log("ETF: using wetf (pure-JS); @yukikaze-bot/erlpack not available.");
+        // wetf is the preferred implementation, no warning needed
         return _cached;
     } catch (e) {
-        console.log("ETF unavailable: ", e);
+        console.error("ETF unavailable: ", e);
         _cached = null;
         return null;
     }

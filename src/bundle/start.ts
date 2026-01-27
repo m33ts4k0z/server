@@ -28,7 +28,7 @@ import { initStats } from "./stats";
 import { config } from "dotenv";
 
 config({ quiet: true });
-import { spawnSync } from "child_process";
+import { spawnSync, execSync } from "child_process";
 import { centerString, Logo } from "@spacebar/util";
 import fs from "fs";
 import path from "path";
@@ -93,12 +93,8 @@ if (cluster.isPrimary) {
 
             // Fork workers.
             for (let i = 0; i < cores; i++) {
-                // Delay each worker start if using sqlite database to prevent locking it
-                const delay = process.env.DATABASE?.includes("://") ? 0 : i * 1000;
-                setTimeout(() => {
-                    cluster.fork();
-                    console.log(`[Process] Worker ${cyan(i)} started.`);
-                }, delay);
+                cluster.fork();
+                console.log(`[Process] Worker ${cyan(i)} started.`);
             }
 
             cluster.on("message", (sender: Worker, message) => {

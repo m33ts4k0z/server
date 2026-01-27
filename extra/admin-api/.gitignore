@@ -1,9 +1,0 @@
-bin/
-obj/
-/patches/
-appsettings.Local*.json
-*.DotSettings.user
-/*.patch
-
-Spacebar.Db/**/*.orig
-Spacebar.Db/**/*.rej

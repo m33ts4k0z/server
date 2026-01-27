@@ -40,8 +40,8 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
+        const { channel_id } = req.params as { channel_id: string };
         const payload = req.body as GreetRequestSchema;
-        const { channel_id } = req.params;
 
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },

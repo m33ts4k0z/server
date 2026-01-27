@@ -65,11 +65,12 @@ router.put(
         },
     }),
     async (req: Request, res: Response) => {
+        const { user_id } = req.params as { user_id: string };
         return await updateRelationship(
             req,
             res,
             await User.findOneOrFail({
-                where: { id: req.params.user_id },
+                where: { id: user_id },
                 relations: { relationships: { to: true } },
                 select: userProjection,
             }),
@@ -93,11 +94,12 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
+        const { user_id } = req.params as { user_id: string };
         const body = req.body as RelationshipPatchSchema;
         const rel = await Relationship.findOneOrFail({
             where: {
                 from_id: req.user_id,
-                to_id: req.params.user_id,
+                to_id: user_id,
             },
         });
         rel.nickname = body.nickname;
@@ -161,7 +163,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { user_id } = req.params;
+        const { user_id } = req.params as { user_id: string };
         if (user_id === req.user_id) throw new HTTPError("You can't remove yourself as a friend");
 
         const user = await User.findOneOrFail({

@@ -95,7 +95,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const channel_id = req.params.channel_id;
+        const channel_id = req.params.channel_id as string;
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
         });
@@ -321,7 +321,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params;
+        const { channel_id } = req.params as { channel_id: string };
         const body = req.body as MessageCreateSchema;
         const attachments: (Attachment | MessageCreateAttachment | MessageCreateCloudAttachment)[] = body.attachments ?? [];
 
@@ -490,7 +490,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params; // not really a channel id if read_state_type != CHANNEL
+        const { channel_id } = req.params as { channel_id: string }; // not really a channel id if read_state_type != CHANNEL
         const body = req.body as AcknowledgeDeleteSchema;
         if (body.version != 2) return res.status(204).send();
         // TODO: handle other read state types

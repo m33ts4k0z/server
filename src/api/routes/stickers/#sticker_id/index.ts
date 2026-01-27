@@ -31,7 +31,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { sticker_id } = req.params;
+        const { sticker_id } = req.params as { sticker_id: string };
 
         res.json(await Sticker.find({ where: { id: sticker_id } }));
     },

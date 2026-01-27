@@ -36,10 +36,10 @@ const ALLOWED_MIME_TYPES = [...ANIMATED_MIME_TYPES, ...STATIC_MIME_TYPES];
 const router = Router({ mergeParams: true });
 
 router.post("/:user_id", multer.single("file"), async (req: Request, res: Response) => {
+    const { user_id } = req.params as { user_id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
     if (!req.file) throw new HTTPError("Missing file");
     const { buffer, size } = req.file;
-    const { user_id } = req.params;
 
     let hash = crypto.createHash("md5").update(Snowflake.generate()).digest("hex");
 
@@ -61,8 +61,8 @@ router.post("/:user_id", multer.single("file"), async (req: Request, res: Respon
 });
 
 router.get("/:user_id", async (req: Request, res: Response) => {
-    let { user_id } = req.params;
-    user_id = user_id.split(".")[0]; // remove .file extension
+    const { user_id: user_id_raw } = req.params as { user_id: string };
+    const user_id = user_id_raw.split(".")[0]; // remove .file extension
     const path = `avatars/${user_id}`;
 
     const file = await storage.get(path);
@@ -76,9 +76,8 @@ router.get("/:user_id", async (req: Request, res: Response) => {
 });
 
 export const getAvatar = async (req: Request, res: Response) => {
-    const { user_id } = req.params;
-    let { hash } = req.params;
-    hash = hash.split(".")[0]; // remove .file extension
+    const { user_id, hash: hash_raw } = req.params as { user_id: string; hash: string };
+    const hash = hash_raw.split(".")[0]; // remove .file extension
     const path = `avatars/${user_id}/${hash}`;
 
     const file = await storage.get(path);
@@ -94,8 +93,8 @@ export const getAvatar = async (req: Request, res: Response) => {
 router.get("/:user_id/:hash", getAvatar);
 
 router.delete("/:user_id/:id", async (req: Request, res: Response) => {
+    const { user_id, id } = req.params as { user_id: string; id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
-    const { user_id, id } = req.params;
     const path = `avatars/${user_id}/${id}`;
 
     await storage.delete(path);

@@ -84,4 +84,4 @@ export class BaseClass extends BaseClassWithoutId {
     }
 }
 
-export const ArrayColumn = (opts: ColumnOptions) => (process.env.DATABASE?.startsWith("postgres") ? Column({ ...opts, array: true }) : Column({ ...opts, type: "simple-array" }));
+export const ArrayColumn = (opts: ColumnOptions) => Column({ ...opts, array: true });

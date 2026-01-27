@@ -42,7 +42,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params;
+        const { channel_id } = req.params as { channel_id: string };
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
         });
