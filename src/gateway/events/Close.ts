@@ -30,40 +30,34 @@ export async function Close(this: WebSocket, code: number, reason: Buffer) {
     if (this.session_id) {
         await Session.delete({ session_id: this.session_id });
 
+        // Clean voice state for this session on any disconnect (close, crash, network drop).
+        // Look up by session_id so we clear even if user_id is unset (e.g. edge case); normally we have user_id after Identify.
         const voiceState = await VoiceState.findOne({
-            where: { user_id: this.user_id },
+            where: { session_id: this.session_id },
         });
 
-        // Only clear voice state if this session owned it; if user has other sessions (e.g. streamer + viewer tabs), reassign to another so streamer stays in voice
-        if (voiceState && voiceState.session_id === this.session_id && voiceState.channel_id) {
-            const remainingSessions = await Session.find({
-                where: { user_id: this.user_id },
-            });
-            if (remainingSessions.length > 0) {
-                voiceState.session_id = remainingSessions[0].session_id;
-                await voiceState.save();
-            } else {
-                const prevGuildId = voiceState.guild_id;
-                const prevChannelId = voiceState.channel_id;
+        // If this session was in a channel, clear it and notify others; if user has other sessions (e.g. streamer + viewer tabs), reassign to another so streamer stays in voice
+        if (voiceState && voiceState.channel_id) {
+            const prevGuildId = voiceState.guild_id;
+            const prevChannelId = voiceState.channel_id;
 
-                // @ts-expect-error channel_id is nullable
-                voiceState.channel_id = null;
-                // @ts-expect-error guild_id is nullable
-                voiceState.guild_id = null;
-                voiceState.self_stream = false;
-                voiceState.self_video = false;
-                await voiceState.save();
+            // @ts-expect-error channel_id is nullable
+            voiceState.channel_id = null;
+            // @ts-expect-error guild_id is nullable
+            voiceState.guild_id = null;
+            voiceState.self_stream = false;
+            voiceState.self_video = false;
+            await voiceState.save();
 
-                await emitEvent({
-                    event: "VOICE_STATE_UPDATE",
-                    data: {
-                        ...voiceState.toPublicVoiceState(),
-                        guild_id: prevGuildId,
-                    },
+            await emitEvent({
+                event: "VOICE_STATE_UPDATE",
+                data: {
+                    ...voiceState.toPublicVoiceState(),
                     guild_id: prevGuildId,
-                    channel_id: prevChannelId,
-                } as VoiceStateUpdateEvent);
-            }
+                },
+                guild_id: prevGuildId,
+                channel_id: prevChannelId,
+            } as VoiceStateUpdateEvent);
         }
     }
 
