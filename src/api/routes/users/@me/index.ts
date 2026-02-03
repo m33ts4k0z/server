@@ -20,7 +20,7 @@ import { route } from "@spacebar/api";
 import { Config, emitEvent, FieldErrors, generateToken, handleFile, User, UserUpdateEvent } from "@spacebar/util";
 import bcrypt from "bcrypt";
 import { Request, Response, Router } from "express";
-import { PrivateUserProjection, UserModifySchema } from "@spacebar/schemas";
+import { DisplayNameStyle, PrivateUserProjection, UserModifySchema } from "@spacebar/schemas";
 
 const router: Router = Router({ mergeParams: true });
 
@@ -152,6 +152,16 @@ router.patch(
         }
 
         if (body.discriminator) {
+            // TODO: HACK - maybe make this optional?
+            if (!/^\d{4}$/.test(body.discriminator)) {
+                throw FieldErrors({
+                    discriminator: {
+                        code: "INVALID_DISCRIMINATOR",
+                        message: "Discriminator must be 4 digits.",
+                    },
+                });
+            }
+
             if (
                 await User.findOne({
                     where: {
@@ -178,6 +188,30 @@ router.patch(
                         message: `Bio must be less than ${maxBio} in length`,
                     },
                 });
+            }
+        }
+
+        if ("display_name_font_id" in body) {
+            if (!body.display_name_font_id) user.display_name_styles = undefined;
+            else {
+                user.display_name_styles ??= {} as unknown as DisplayNameStyle;
+                user.display_name_styles!.font_id = body.display_name_font_id;
+            }
+        }
+
+        if ("display_name_effect_id" in body) {
+            if (!body.display_name_effect_id) user.display_name_styles = undefined;
+            else {
+                user.display_name_styles ??= {} as unknown as DisplayNameStyle;
+                user.display_name_styles!.effect_id = body.display_name_effect_id;
+            }
+        }
+
+        if ("display_name_colors" in body) {
+            if (!body.display_name_colors) user.display_name_styles = undefined;
+            else {
+                user.display_name_styles ??= {} as unknown as DisplayNameStyle;
+                user.display_name_styles!.colors = body.display_name_colors;
             }
         }
 

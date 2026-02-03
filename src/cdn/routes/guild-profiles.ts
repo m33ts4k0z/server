@@ -23,6 +23,7 @@ import { HTTPError } from "lambert-server";
 import { multer } from "../util/multer";
 import { storage } from "../util/Storage";
 import { fileTypeFromBuffer } from "file-type";
+import { cache } from "../util/cache";
 
 // TODO: check premium and animated pfp are allowed in the config
 // TODO: generate different sizes of icon
@@ -36,10 +37,10 @@ const ALLOWED_MIME_TYPES = [...ANIMATED_MIME_TYPES, ...STATIC_MIME_TYPES];
 const router = Router({ mergeParams: true });
 
 router.post("/", multer.single("file"), async (req: Request, res: Response) => {
-    const { guild_id, user_id } = req.params as { guild_id: string; user_id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
     if (!req.file) throw new HTTPError("Missing file");
     const { buffer, size } = req.file;
+    const { guild_id, user_id } = req.params as { [key: string]: string };
 
     let hash = crypto.createHash("md5").update(Snowflake.generate()).digest("hex");
 
@@ -60,9 +61,10 @@ router.post("/", multer.single("file"), async (req: Request, res: Response) => {
     });
 });
 
-router.get("/", async (req: Request, res: Response) => {
-    const { guild_id, user_id: user_id_raw } = req.params as { guild_id: string; user_id: string };
-    const user_id = user_id_raw.split(".")[0]; // remove .file extension
+router.get("/", cache, async (req: Request, res: Response) => {
+    const { guild_id } = req.params as { [key: string]: string };
+    let { user_id } = req.params as { [key: string]: string };
+    user_id = user_id.split(".")[0]; // remove .file extension
     const path = `guilds/${guild_id}/users/${user_id}/avatars`;
 
     const file = await storage.get(path);
@@ -70,14 +72,14 @@ router.get("/", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 });
 
-router.get("/:hash", async (req: Request, res: Response) => {
-    const { guild_id, user_id, hash: hash_raw } = req.params as { guild_id: string; user_id: string; hash: string };
-    const hash = hash_raw.split(".")[0]; // remove .file extension
+router.get("/:hash", cache, async (req: Request, res: Response) => {
+    const { guild_id, user_id } = req.params as { [key: string]: string };
+    let { hash } = req.params as { [key: string]: string };
+    hash = hash.split(".")[0]; // remove .file extension
     const path = `guilds/${guild_id}/users/${user_id}/avatars/${hash}`;
 
     const file = await storage.get(path);
@@ -85,14 +87,13 @@ router.get("/:hash", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
-    const { guild_id, user_id, id } = req.params as { guild_id: string; user_id: string; id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
+    const { guild_id, user_id, id } = req.params as { [key: string]: string };
     const path = `guilds/${guild_id}/users/${user_id}/avatars/${id}`;
 
     await storage.delete(path);

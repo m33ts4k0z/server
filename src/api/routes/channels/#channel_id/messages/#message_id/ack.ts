@@ -36,7 +36,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id, message_id } = req.params as { channel_id: string; message_id: string };
+        const { channel_id, message_id } = req.params as { [key: string]: string };
 
         const permission = await getPermission(req.user_id, undefined, channel_id);
         permission.hasThrow("VIEW_CHANNEL");

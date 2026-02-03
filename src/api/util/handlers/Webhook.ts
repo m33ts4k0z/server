@@ -6,8 +6,9 @@ import { MoreThan } from "typeorm";
 import { WebhookExecuteSchema } from "@spacebar/schemas";
 
 export const executeWebhook = async (req: Request, res: Response) => {
-    const { webhook_id, token } = req.params as { webhook_id: string; token: string };
     const body = req.body as WebhookExecuteSchema;
+
+    const { webhook_id, token } = req.params as { [key: string]: string };
 
     const webhook = await Webhook.findOne({
         where: {

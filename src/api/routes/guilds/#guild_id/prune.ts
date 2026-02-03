@@ -113,7 +113,7 @@ router.post(
         let roles = req.query.include_roles;
         if (typeof roles === "string") roles = [roles];
 
-        const { guild_id } = req.params as { guild_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
         const members = await inactiveMembers(guild_id, req.user_id, days, roles as string[]);
 
         await Promise.all(members.map((x) => Member.removeFromGuild(x.id, guild_id)));

@@ -28,7 +28,7 @@ router.get("/", route({ responses: { 200: { body: "UserProfileResponse" } } }), 
     if (req.params.user_id === "@me") req.params.user_id = req.user_id;
 
     const { guild_id, with_mutual_guilds, with_mutual_friends, with_mutual_friends_count } = req.query;
-    const { user_id } = req.params as { user_id: string };
+    const { user_id } = req.params as { [key: string]: string };
 
     const user = await User.findOneOrFail({
         where: {
@@ -76,6 +76,8 @@ router.get("/", route({ responses: { 200: { body: "UserProfileResponse" } } }), 
                   relations: { roles: true },
               })
             : undefined;
+
+    if (guild_member) guild_member.roles = guild_member?.roles.filter((role) => role.id != guild_id);
 
     // TODO: make proper DTO's in util?
 

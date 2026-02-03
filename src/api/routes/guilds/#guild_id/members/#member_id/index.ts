@@ -17,7 +17,7 @@
 */
 
 import { route } from "@spacebar/api";
-import { DiscordApiErrors, emitEvent, Emoji, getPermission, getRights, Guild, GuildMemberUpdateEvent, handleFile, Member, Role, Sticker } from "@spacebar/util";
+import { Config, DiscordApiErrors, emitEvent, Emoji, getPermission, getRights, Guild, GuildMemberUpdateEvent, handleFile, Member, Role, Sticker } from "@spacebar/util";
 import { Request, Response, Router } from "express";
 import { MemberChangeSchema, PublicMemberProjection, PublicUserProjection } from "@spacebar/schemas";
 
@@ -39,7 +39,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id, member_id } = req.params as { guild_id: string; member_id: string };
+        const { guild_id, member_id } = req.params as { [key: string]: string };
         await Member.IsInGuildOrFail(req.user_id, guild_id);
 
         const member = await Member.findOneOrFail({
@@ -85,7 +85,7 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params as { guild_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
         const member_id = req.params.member_id === "@me" ? req.user_id : (req.params.member_id as string);
         const body = req.body as MemberChangeSchema;
 
@@ -168,12 +168,12 @@ router.put(
 
         const rights = await getRights(req.user_id);
 
-        const { guild_id } = req.params as { guild_id: string };
-        let { member_id } = req.params as { member_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
+        let { member_id } = req.params as { [key: string]: string };
         if (member_id === "@me") {
             member_id = req.user_id;
             rights.hasThrow("JOIN_GUILDS");
-            if (req.user_bot) throw DiscordApiErrors.BOT_PROHIBITED_ENDPOINT;
+            if (req.user_bot && !Config.get().user.botsCanUseInvites) throw DiscordApiErrors.BOT_PROHIBITED_ENDPOINT;
         } else {
             // TODO: check oauth2 scope
 
@@ -216,7 +216,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id, member_id } = req.params as { guild_id: string; member_id: string };
+        const { guild_id, member_id } = req.params as { [key: string]: string };
         const permission = await getPermission(req.user_id, guild_id);
         const rights = await getRights(req.user_id);
         if (member_id === "@me" || member_id === req.user_id) {

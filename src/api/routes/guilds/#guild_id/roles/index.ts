@@ -124,7 +124,7 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params as { guild_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
         const body = req.body as RolePositionUpdateSchema;
 
         await Promise.all(body.map(async (x) => Role.update({ guild_id, id: x.id }, { position: x.position })));

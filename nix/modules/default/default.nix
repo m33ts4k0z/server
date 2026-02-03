@@ -10,23 +10,35 @@ self:
 let
   cfg = config.services.spacebarchat-server;
   jsonFormat = pkgs.formats.json { };
-  configFile = jsonFormat.generate "spacebarchat-server.json" (
-    lib.recursiveUpdate {
-      api = {
-        endpointPublic = "http${if cfg.apiEndpoint.useSsl then "s" else ""}://${cfg.apiEndpoint.host}:${toString cfg.apiEndpoint.publicPort}";
-      };
-      cdn = {
-        endpointPublic = "http${if cfg.cdnEndpoint.useSsl then "s" else ""}://${cfg.cdnEndpoint.host}:${toString cfg.cdnEndpoint.publicPort}";
-        endpointPrivate = "http://127.0.0.1:${toString cfg.cdnEndpoint.localPort}";
-      };
-      gateway = {
-        endpointPublic = "ws${if cfg.gatewayEndpoint.useSsl then "s" else ""}://${cfg.gatewayEndpoint.host}:${toString cfg.gatewayEndpoint.publicPort}";
-      };
-      general = {
-        serverName = cfg.serverName;
-      };
-    } cfg.settings
-  );
+  configFile =
+    let
+      endpointSettings = {
+        api = {
+          endpointPublic = "http${if cfg.apiEndpoint.useSsl then "s" else ""}://${cfg.apiEndpoint.host}:${toString cfg.apiEndpoint.publicPort}";
+        };
+        cdn = {
+          endpointPublic = "http${if cfg.cdnEndpoint.useSsl then "s" else ""}://${cfg.cdnEndpoint.host}:${toString cfg.cdnEndpoint.publicPort}";
+          endpointPrivate = "http://127.0.0.1:${toString cfg.cdnEndpoint.localPort}";
+        };
+        gateway = {
+          endpointPublic = "ws${if cfg.gatewayEndpoint.useSsl then "s" else ""}://${cfg.gatewayEndpoint.host}:${toString cfg.gatewayEndpoint.publicPort}";
+        };
+        general = {
+          serverName = cfg.serverName;
+        };
+      }
+      // (
+        if cfg.enableAdminApi then
+          {
+            adminApi = {
+              endpointPublic = "http${if cfg.adminApiEndpoint.useSsl then "s" else ""}://${cfg.adminApiEndpoint.host}:${toString cfg.adminApiEndpoint.publicPort}";
+            };
+          }
+        else
+          { }
+      );
+    in
+    jsonFormat.generate "spacebarchat-server.json" (lib.recursiveUpdate endpointSettings cfg.settings);
 in
 {
   imports = [
@@ -41,6 +53,7 @@ in
     {
       enable = lib.mkEnableOption "Spacebar server";
       enableAdminApi = lib.mkEnableOption "Spacebar server Admin API";
+      enableCdnCs = lib.mkEnableOption "Spacebar's experimental CDN rewrite";
       package = lib.mkPackageOption self.packages.${pkgs.stdenv.hostPlatform.system} "spacebar-server" { default = "default"; };
       databaseFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
@@ -56,6 +69,7 @@ in
         type = lib.types.str;
         description = "The server name for this Spacebar instance (aka. common name, usually the domain where your well known is hosted).";
       };
+      adminApiEndpoint = mkEndpointOptions "admin-api.sb.localhost" 3004;
       apiEndpoint = mkEndpointOptions "api.sb.localhost" 3001;
       gatewayEndpoint = mkEndpointOptions "gateway.sb.localhost" 3003;
       cdnEndpoint = mkEndpointOptions "cdn.sb.localhost" 3003;
@@ -221,32 +235,8 @@ in
         #        }
       ];
 
-      systemd.services.spacebar-apply-migrations = makeServerTsService {
-        description = "Spacebar Server - Apply DB migrations";
-#        after = lib.optional config.services.postgresql.enable "postgresql.service";
-#        requires = lib.optional config.services.postgresql.enable "postgresql.service";
-        environment = builtins.mapAttrs (_: val: builtins.toString val) (
-          cfg.extraEnvironment
-          // {
-            # things we force...
-            CONFIG_PATH = configFile;
-            CONFIG_READONLY = 1;
-          }
-        );
-        serviceConfig = {
-          ExecStart = "${cfg.package}/bin/apply-migrations";
-          Type = "oneshot";
-          RemainAfterExit = true;
-          TimeoutStartSec = 15;
-          RestartSec = 1;
-          StartLimitBurst = 15;
-        };
-      };
-
       systemd.services.spacebar-api = makeServerTsService {
         description = "Spacebar Server - API";
-        after = [ "spacebar-apply-migrations.service" ];
-        requires = [ "spacebar-apply-migrations.service" ];
         environment = builtins.mapAttrs (_: val: builtins.toString val) (
           {
             # things we set by default...
@@ -269,8 +259,6 @@ in
 
       systemd.services.spacebar-gateway = makeServerTsService {
         description = "Spacebar Server - Gateway";
-        after = [ "spacebar-apply-migrations.service" ];
-        requires = [ "spacebar-apply-migrations.service" ];
         environment = builtins.mapAttrs (_: val: builtins.toString val) (
           {
             # things we set by default...
@@ -284,6 +272,7 @@ in
             CONFIG_READONLY = 1;
             PORT = toString cfg.gatewayEndpoint.localPort;
             STORAGE_LOCATION = cfg.cdnPath;
+            APPLY_DB_MIGRATIONS = false;
           }
         );
         serviceConfig = {
@@ -291,10 +280,8 @@ in
         };
       };
 
-      systemd.services.spacebar-cdn = makeServerTsService {
+      systemd.services.spacebar-cdn = lib.mkIf (!cfg.enableCdnCs) (makeServerTsService {
         description = "Spacebar Server - CDN";
-        after = [ "spacebar-apply-migrations.service" ];
-        requires = [ "spacebar-apply-migrations.service" ];
         environment = builtins.mapAttrs (_: val: builtins.toString val) (
           {
             # things we set by default...
@@ -308,12 +295,13 @@ in
             CONFIG_READONLY = 1;
             PORT = toString cfg.cdnEndpoint.localPort;
             STORAGE_LOCATION = cfg.cdnPath;
+            APPLY_DB_MIGRATIONS = false;
           }
         );
         serviceConfig = {
           ExecStart = "${cfg.package}/bin/start-cdn";
         };
-      };
+      });
     }
   );
 }

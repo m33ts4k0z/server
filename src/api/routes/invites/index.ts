@@ -17,7 +17,7 @@
 */
 
 import { route } from "@spacebar/api";
-import { Ban, DiscordApiErrors, emitEvent, getPermission, Guild, Invite, InviteDeleteEvent, PublicInviteRelation, User } from "@spacebar/util";
+import { Ban, Config, DiscordApiErrors, emitEvent, getPermission, Guild, Invite, InviteDeleteEvent, PublicInviteRelation, User } from "@spacebar/util";
 import { Request, Response, Router } from "express";
 import { HTTPError } from "lambert-server";
 import { UserFlags } from "@spacebar/schemas";
@@ -37,7 +37,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { invite_code } = req.params as { invite_code: string };
+        const { invite_code } = req.params as { [key: string]: string };
 
         const invite = await Invite.findOneOrFail({
             where: { code: invite_code },
@@ -68,9 +68,9 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        if (req.user_bot) throw DiscordApiErrors.BOT_PROHIBITED_ENDPOINT;
+        if (req.user_bot && !Config.get().user.botsCanUseInvites) throw DiscordApiErrors.BOT_PROHIBITED_ENDPOINT;
 
-        const { invite_code } = req.params as { invite_code: string };
+        const { invite_code } = req.params as { [key: string]: string };
         const { public_flags } = req.user;
         const { guild_id } = await Invite.findOneOrFail({
             where: { code: invite_code },
@@ -128,7 +128,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { invite_code } = req.params as { invite_code: string };
+        const { invite_code } = req.params as { [key: string]: string };
         const invite = await Invite.findOneOrFail({ where: { code: invite_code } });
         const { guild_id, channel_id } = invite;
 

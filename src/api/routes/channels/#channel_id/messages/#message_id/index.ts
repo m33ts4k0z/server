@@ -35,7 +35,7 @@ import { Request, Response, Router } from "express";
 import { HTTPError } from "lambert-server";
 import multer from "multer";
 import { handleMessage, postHandleMessage, route } from "../../../../../util";
-import { MessageCreateAttachment, MessageCreateCloudAttachment, MessageCreateSchema, MessageEditSchema } from "@spacebar/schemas";
+import { MessageCreateAttachment, MessageCreateCloudAttachment, MessageCreateSchema, MessageEditSchema, ChannelType } from "@spacebar/schemas";
 
 const router = Router({ mergeParams: true });
 // TODO: message content/embed string length limit
@@ -67,7 +67,7 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
         let body = req.body as MessageEditSchema;
 
         const message = await Message.findOneOrFail({
@@ -165,7 +165,7 @@ router.put(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id, message_id } = req.params as { channel_id: string; message_id: string };
+        const { channel_id, message_id } = req.params as { [key: string]: string };
         const body = req.body as MessageCreateSchema;
         const attachments: (MessageCreateAttachment | MessageCreateCloudAttachment)[] = body.attachments ?? [];
 
@@ -261,7 +261,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
 
         const message = await Message.findOneOrFail({
             where: { id: message_id, channel_id },
@@ -288,11 +288,15 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
 
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
         });
+        if (channel.type === ChannelType.GUILD_PUBLIC_THREAD) {
+            if (channel.message_count !== undefined) channel.message_count--;
+            channel.save(); //Save async, it's fine
+        }
         const message = await Message.findOneOrFail({
             where: { id: message_id },
         });

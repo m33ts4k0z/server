@@ -23,6 +23,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { HTTPError } from "lambert-server";
 import crypto from "crypto";
 import { multer } from "../util/multer";
+import { cache } from "../util/cache";
 
 // TODO: check premium and animated pfp are allowed in the config
 // TODO: generate different sizes of icon
@@ -36,10 +37,10 @@ const ALLOWED_MIME_TYPES = [...ANIMATED_MIME_TYPES, ...STATIC_MIME_TYPES];
 const router = Router({ mergeParams: true });
 
 router.post("/:user_id", multer.single("file"), async (req: Request, res: Response) => {
-    const { user_id } = req.params as { user_id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
     if (!req.file) throw new HTTPError("Missing file");
     const { buffer, size } = req.file;
+    const { user_id } = req.params as { [key: string]: string };
 
     let hash = crypto.createHash("md5").update(Snowflake.generate()).digest("hex");
 
@@ -60,9 +61,9 @@ router.post("/:user_id", multer.single("file"), async (req: Request, res: Respon
     });
 });
 
-router.get("/:user_id", async (req: Request, res: Response) => {
-    const { user_id: user_id_raw } = req.params as { user_id: string };
-    const user_id = user_id_raw.split(".")[0]; // remove .file extension
+router.get("/:user_id", cache, async (req: Request, res: Response) => {
+    let { user_id } = req.params as { [key: string]: string };
+    user_id = user_id.split(".")[0]; // remove .file extension
     const path = `avatars/${user_id}`;
 
     const file = await storage.get(path);
@@ -70,14 +71,14 @@ router.get("/:user_id", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 });
 
 export const getAvatar = async (req: Request, res: Response) => {
-    const { user_id, hash: hash_raw } = req.params as { user_id: string; hash: string };
-    const hash = hash_raw.split(".")[0]; // remove .file extension
+    const { user_id } = req.params as { [key: string]: string };
+    let { hash } = req.params as { [key: string]: string };
+    hash = hash.split(".")[0]; // remove .file extension
     const path = `avatars/${user_id}/${hash}`;
 
     const file = await storage.get(path);
@@ -85,16 +86,15 @@ export const getAvatar = async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 };
 
-router.get("/:user_id/:hash", getAvatar);
+router.get("/:user_id/:hash", cache, getAvatar);
 
 router.delete("/:user_id/:id", async (req: Request, res: Response) => {
-    const { user_id, id } = req.params as { user_id: string; id: string };
     if (req.headers.signature !== Config.get().security.requestSignature) throw new HTTPError("Invalid request signature");
+    const { user_id, id } = req.params as { [key: string]: string };
     const path = `avatars/${user_id}/${id}`;
 
     await storage.delete(path);

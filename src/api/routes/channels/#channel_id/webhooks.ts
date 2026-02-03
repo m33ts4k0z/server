@@ -17,7 +17,7 @@
 */
 
 import { route } from "@spacebar/api";
-import { Channel, Config, DiscordApiErrors, User, Webhook, handleFile, trimSpecial, ValidateName } from "@spacebar/util";
+import { Channel, Config, DiscordApiErrors, User, Webhook, handleFile, trimSpecial, ValidateName, Application } from "@spacebar/util";
 import crypto from "crypto";
 import { Request, Response, Router } from "express";
 import { HTTPError } from "lambert-server";
@@ -37,7 +37,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params as { channel_id: string };
+        const { channel_id } = req.params as { [key: string]: string };
         const webhooks = await Webhook.find({
             where: { channel_id },
             relations: { user: true, channel: true, source_channel: true, guild: true, source_guild: true, application: true },
@@ -69,7 +69,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const channel_id = req.params.channel_id as string;
+        const { channel_id } = req.params as { [key: string]: string };
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
         });
@@ -98,6 +98,7 @@ router.post(
             guild_id: channel.guild_id,
             channel_id: channel.id,
             user_id: req.user_id,
+            application: (await Application.findOneBy({ id: req.user_id })) ?? undefined,
             token: crypto.randomBytes(24).toString("base64url"),
         }).save();
 

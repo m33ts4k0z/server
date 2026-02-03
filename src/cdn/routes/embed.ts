@@ -21,6 +21,7 @@ import fs from "fs/promises";
 import { HTTPError } from "lambert-server";
 import { join } from "path";
 import { fileTypeFromBuffer } from "file-type";
+import { cache } from "../util/cache";
 
 const defaultAvatarHashMap = new Map([
     ["0", "4a8562cf00887030c416d3ec2d46385a"],
@@ -58,9 +59,9 @@ async function getFile(path: string) {
     }
 }
 
-router.get("/avatars/:id", async (req: Request, res: Response) => {
-    const { id: id_raw } = req.params as { id: string };
-    const id = id_raw.split(".")[0]; // remove .file extension
+router.get("/avatars/:id", cache, async (req: Request, res: Response) => {
+    let { id } = req.params as { [key: string]: string };
+    id = id.split(".")[0]; // remove .file extension
     const hash = defaultAvatarHashMap.get(id);
     if (!hash) throw new HTTPError("not found", 404);
     const path = join(__dirname, "..", "..", "..", "assets", "public", `${hash}.png`);
@@ -70,14 +71,13 @@ router.get("/avatars/:id", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 });
 
-router.get("/group-avatars/:id", async (req: Request, res: Response) => {
-    const { id: id_raw } = req.params as { id: string };
-    const id = id_raw.split(".")[0]; // remove .file extension
+router.get("/group-avatars/:id", cache, async (req: Request, res: Response) => {
+    let { id } = req.params as { [key: string]: string };
+    id = id.split(".")[0]; // remove .file extension
     const hash = defaultGroupDMAvatarHashMap.get(id);
     if (!hash) throw new HTTPError("not found", 404);
     const path = join(__dirname, "..", "..", "..", "assets", "public", `${hash}.png`);
@@ -87,7 +87,6 @@ router.get("/group-avatars/:id", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000");
 
     return res.send(file);
 });

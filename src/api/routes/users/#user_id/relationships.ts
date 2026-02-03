@@ -34,11 +34,10 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const user_id = req.params.user_id as string;
         const mutual_relations: UserRelationsResponse = [];
 
         const requested_relations = await User.findOneOrFail({
-            where: { id: user_id },
+            where: { id: req.params.user_id as string },
             relations: { relationships: true },
         });
         const self_relations = await User.findOneOrFail({

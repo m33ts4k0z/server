@@ -37,7 +37,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params as { channel_id: string };
+        const { channel_id } = req.params as { [key: string]: string };
 
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
@@ -61,7 +61,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params as { channel_id: string };
+        const { channel_id } = req.params as { [key: string]: string };
 
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
@@ -83,6 +83,20 @@ router.delete(
             ]);
         } else if (channel.type === ChannelType.GROUP_DM) {
             await Channel.removeRecipientFromChannel(channel, req.user_id);
+        } else if (channel.isThread()) {
+            await Promise.all([
+                Channel.delete({ id: channel_id }),
+                emitEvent({
+                    event: "THREAD_DELETE",
+                    data: {
+                        id: channel_id,
+                        guild_id: channel.guild_id,
+                        parent_id: channel.parent_id,
+                        type: channel.type,
+                    },
+                    guild_id: channel.guild_id,
+                }),
+            ]);
         } else {
             if (channel.type == ChannelType.GUILD_CATEGORY) {
                 const channels = await Channel.find({
@@ -132,8 +146,8 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params as { channel_id: string };
         const payload = req.body as ChannelModifySchema;
+        const { channel_id } = req.params as { [key: string]: string };
         if (payload.icon) payload.icon = await handleFile(`/channel-icons/${channel_id}`, payload.icon);
 
         const channel = await Channel.findOneOrFail({

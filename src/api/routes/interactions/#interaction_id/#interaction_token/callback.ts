@@ -69,7 +69,7 @@ router.post("/", route({}), async (req: Request, res: Response) => {
     }
 
     const interactionId = req.params.interaction_id as string;
-    const interaction = pendingInteractions.get(interactionId);
+    const interaction = pendingInteractions.get(req.params.interaction_id);
 
     if (!interaction) {
         return;

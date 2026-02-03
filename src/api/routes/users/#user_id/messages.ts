@@ -35,8 +35,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const user_id = req.params.user_id as string;
-        const user = await User.findOneOrFail({ where: { id: user_id } });
+        const user = await User.findOneOrFail({ where: { id: req.params.user_id as string } });
         const channel = await user.getDmChannelWith(req.user_id);
 
         const messages = (

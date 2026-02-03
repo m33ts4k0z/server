@@ -38,9 +38,8 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { application_id } = req.params as { application_id: string };
         const app = await Application.findOneOrFail({
-            where: { id: application_id },
+            where: { id: req.params.application_id as string },
             relations: { owner: true, bot: true },
         });
         if (app.owner.id != req.user_id) throw DiscordApiErrors.ACTION_NOT_AUTHORIZED_ON_APPLICATION;
@@ -63,11 +62,10 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { application_id } = req.params as { application_id: string };
         const body = req.body as ApplicationModifySchema;
 
         const app = await Application.findOneOrFail({
-            where: { id: application_id },
+            where: { id: req.params.application_id as string },
             relations: { owner: true, bot: true },
         });
 
@@ -123,9 +121,8 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { application_id } = req.params as { application_id: string };
         const app = await Application.findOneOrFail({
-            where: { id: application_id },
+            where: { id: req.params.application_id as string },
             relations: { bot: true, owner: true },
         });
         if (app.owner.id != req.user_id) throw DiscordApiErrors.ACTION_NOT_AUTHORIZED_ON_APPLICATION;

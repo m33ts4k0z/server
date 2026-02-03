@@ -68,7 +68,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
 
         const channel = await Channel.findOneOrFail({
             where: { id: channel_id },
@@ -104,7 +104,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
         const emoji = getEmoji(req.params.emoji as string);
 
         const message = await Message.findOneOrFail({
@@ -149,7 +149,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
         const emoji = getEmoji(req.params.emoji as string);
 
         const message = await Message.findOneOrFail({
@@ -186,7 +186,7 @@ router.put(
         },
     }),
     async (req: Request, res: Response) => {
-        const { message_id, channel_id, user_id } = req.params as { message_id: string; channel_id: string; user_id: string };
+        const { message_id, channel_id, user_id } = req.params as { [key: string]: string };
         if (user_id !== "@me") throw new HTTPError("Invalid user");
         const emoji = getEmoji(req.params.emoji as string);
 
@@ -261,8 +261,8 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        let { user_id } = req.params as { user_id: string; message_id: string; channel_id: string };
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        let { user_id } = req.params as { [key: string]: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
 
         const emoji = getEmoji(req.params.emoji as string);
 
@@ -318,8 +318,8 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        let { user_id } = req.params as { user_id: string; message_id: string; channel_id: string };
-        const { message_id, channel_id } = req.params as { message_id: string; channel_id: string };
+        let { user_id } = req.params as { [key: string]: string };
+        const { message_id, channel_id } = req.params as { [key: string]: string };
 
         const emoji = getEmoji(req.params.emoji as string);
 

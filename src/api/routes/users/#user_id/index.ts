@@ -32,7 +32,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { user_id } = req.params as { user_id: string };
+        const { user_id } = req.params as { [key: string]: string };
 
         res.json(await User.getPublicUser(user_id));
     },

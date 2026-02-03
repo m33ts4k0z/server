@@ -39,8 +39,8 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { channel_id } = req.params as { channel_id: string };
         const payload = req.body as UploadAttachmentRequestSchema;
+        const { channel_id } = req.params as { [key: string]: string };
 
         const user = req.user;
         const channel = await Channel.findOneOrFail({ where: { id: channel_id } });
@@ -99,49 +99,35 @@ router.post(
     },
 );
 
-router.delete(
-    "/:cloud_attachment_url",
-    route({
-        responses: {
-            200: {},
-            400: {
-                body: "APIErrorResponse",
-            },
-            403: {
-                body: "APIErrorResponse",
-            },
-        },
-    }),
-    async (req: Request, res: Response) => {
-        const { channel_id, cloud_attachment_url } = req.params as { channel_id: string; cloud_attachment_url: string };
+router.delete("/:cloud_attachment_url", async (req: Request, res: Response) => {
+    const { channel_id, cloud_attachment_url } = req.params as { [key: string]: string };
 
-        const user = req.user;
-        const channel = await Channel.findOneOrFail({ where: { id: channel_id } });
-        const att = await CloudAttachment.findOneOrFail({ where: { uploadFilename: decodeURI(cloud_attachment_url) } });
-        if (att.userId !== user.id) {
-            return res.status(403).json({
-                code: 403,
-                message: "You do not own this attachment.",
-            });
-        }
-
-        if (att.channelId !== channel.id) {
-            return res.status(400).json({
-                code: 400,
-                message: "Attachment does not belong to this channel.",
-            });
-        }
-
-        const response = await fetch(`${Config.get().cdn.endpointPrivate}/attachments/${att.uploadFilename}`, {
-            headers: {
-                signature: Config.get().security.requestSignature,
-            },
-            method: "DELETE",
+    const user = req.user;
+    const channel = await Channel.findOneOrFail({ where: { id: channel_id } });
+    const att = await CloudAttachment.findOneOrFail({ where: { uploadFilename: decodeURI(cloud_attachment_url) } });
+    if (att.userId !== user.id) {
+        return res.status(403).json({
+            code: 403,
+            message: "You do not own this attachment.",
         });
+    }
 
-        await att.remove();
-        return res.status(response.status).send(response.body);
-    },
-);
+    if (att.channelId !== channel.id) {
+        return res.status(400).json({
+            code: 400,
+            message: "Attachment does not belong to this channel.",
+        });
+    }
+
+    const response = await fetch(`${Config.get().cdn.endpointPrivate}/attachments/${att.uploadFilename}`, {
+        headers: {
+            signature: Config.get().security.requestSignature,
+        },
+        method: "DELETE",
+    });
+
+    await att.remove();
+    return res.status(response.status).send(response.body);
+});
 
 export default router;

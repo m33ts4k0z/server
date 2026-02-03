@@ -36,7 +36,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params as { guild_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
 
         await Member.IsInGuildOrFail(req.user_id, guild_id);
 
@@ -65,7 +65,7 @@ router.get(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id, emoji_id } = req.params as { guild_id: string; emoji_id: string };
+        const { guild_id, emoji_id } = req.params as { [key: string]: string };
 
         await Member.IsInGuildOrFail(req.user_id, guild_id);
 
@@ -96,7 +96,7 @@ router.post(
         },
     }),
     async (req: Request, res: Response) => {
-        const { guild_id } = req.params as { guild_id: string };
+        const { guild_id } = req.params as { [key: string]: string };
         const body = req.body as EmojiCreateSchema;
 
         const id = Snowflake.generate();
@@ -107,6 +107,7 @@ router.post(
 
         if (emoji_count >= maxEmojis) throw DiscordApiErrors.MAXIMUM_NUMBER_OF_EMOJIS_REACHED.withParams(maxEmojis);
         if (body.require_colons == null) body.require_colons = true;
+        if (body.name?.includes("-")) body.name = body.name?.replaceAll("-", ""); // Dashes are invalid apparently
 
         const user = req.user;
         await handleFile(`/emojis/${id}`, body.image);
@@ -152,8 +153,10 @@ router.patch(
         },
     }),
     async (req: Request, res: Response) => {
-        const { emoji_id, guild_id } = req.params as { emoji_id: string; guild_id: string };
+        const { emoji_id, guild_id } = req.params as { [key: string]: string };
         const body = req.body as EmojiModifySchema;
+
+        if (body.name?.includes("-")) body.name = body.name?.replaceAll("-", ""); // Dashes are invalid apparently
 
         const emoji = await Emoji.create({
             ...body,
@@ -186,7 +189,7 @@ router.delete(
         },
     }),
     async (req: Request, res: Response) => {
-        const { emoji_id, guild_id } = req.params as { emoji_id: string; guild_id: string };
+        const { emoji_id, guild_id } = req.params as { [key: string]: string };
 
         await Emoji.delete({
             id: emoji_id,

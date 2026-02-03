@@ -64,6 +64,7 @@ export interface RouteOptions {
         };
     };
     deprecated?: boolean;
+    spacebarOnly?: boolean;
     // test?: {
     // 	response?: RouteResponse;
     // 	body?: unknown;
@@ -88,7 +89,8 @@ export function route(opts: RouteOptions) {
 
     return async (req: Request, res: Response, next: NextFunction) => {
         if (opts.permission) {
-            req.permission = await getPermission(req.user_id, req.params.guild_id as string | undefined, req.params.channel_id as string | undefined);
+            const { guild_id, channel_id } = req.params as { [key: string]: string };
+            req.permission = await getPermission(req.user_id, guild_id, channel_id);
 
             const requiredPerms = Array.isArray(opts.permission) ? opts.permission : [opts.permission];
             requiredPerms.forEach((perm) => {

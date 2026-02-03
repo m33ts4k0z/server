@@ -20,11 +20,12 @@ import { Router, Response, Request } from "express";
 import { storage } from "../util/Storage";
 import { HTTPError } from "lambert-server";
 import { fileTypeFromBuffer } from "file-type";
+import { cache } from "../util/cache";
 
 const router = Router({ mergeParams: true });
 
-router.get("/:badge_id", async (req: Request, res: Response) => {
-    const { badge_id } = req.params;
+router.get("/:badge_id", cache, async (req: Request, res: Response) => {
+    const { badge_id } = req.params as { [key: string]: string };
     const path = `badge-icons/${badge_id}`;
 
     const file = await storage.get(path);
@@ -32,7 +33,6 @@ router.get("/:badge_id", async (req: Request, res: Response) => {
     const type = await fileTypeFromBuffer(file);
 
     res.set("Content-Type", type?.mime);
-    res.set("Cache-Control", "public, max-age=31536000, must-revalidate");
 
     return res.send(file);
 });
