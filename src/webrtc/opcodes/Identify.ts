@@ -70,7 +70,10 @@ export async function onIdentify(this: WebRtcWebSocket, data: VoicePayload) {
     }
 
     // if it doesnt match any then not valid token
-    if (!authenticated) return this.close(CLOSECODES.Authentication_failed);
+    if (!authenticated) {
+        console.warn("[WebRTC] closing: Authentication_failed (user_id=" + user_id + " server_id=" + server_id + " session_id=" + session_id + ")");
+        return this.close(CLOSECODES.Authentication_failed);
+    }
 
     this.user_id = user_id;
     this.session_id = session_id;
@@ -78,6 +81,9 @@ export async function onIdentify(this: WebRtcWebSocket, data: VoicePayload) {
     this.type = type;
 
     const voiceRoomId = type === "stream" ? server_id : voiceState!.channel_id;
+    if (type === "stream") {
+        console.log("[WebRTC stream] user", this.user_id, "joining stream room", voiceRoomId);
+    }
     this.webRtcClient = await mediaServer.join(voiceRoomId, this.user_id, this, type!);
 
     this.on("close", () => {

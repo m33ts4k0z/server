@@ -48,6 +48,7 @@ export async function onVoiceStateUpdate(this: WebSocket, data: Payload) {
         }
 
         if (voiceState.channel_id !== body.channel_id) isChanged = true;
+        if (voiceState.session_id !== this.session_id) isChanged = true;
 
         //If a user change voice channel between guild we should send a left event first
         if (voiceState.guild_id && voiceState.guild_id !== body.guild_id && voiceState.session_id === this.session_id) {
@@ -70,6 +71,7 @@ export async function onVoiceStateUpdate(this: WebSocket, data: Payload) {
             mute: false,
             suppress: false,
         });
+        isChanged = true;
     }
 
     // if user left voice channel, send an update to previous channel/guild to let other people know that the user left
@@ -115,6 +117,36 @@ export async function onVoiceStateUpdate(this: WebSocket, data: Payload) {
             user_id: voiceState.user_id,
         } as VoiceStateUpdateEvent),
     ]);
+
+    // When a user joins a channel, send them the current voice state of everyone already in that channel
+    // so the client can show stream/live state (e.g. green "Watch stream" button) without requiring a restart
+    if ((isNew || isChanged) && voiceState.channel_id !== null && voiceState.guild_id) {
+        const othersInChannel = await VoiceState.find({
+            where: { channel_id: voiceState.channel_id, guild_id: voiceState.guild_id },
+        });
+        for (const other of othersInChannel) {
+            if (other.user_id === this.user_id) continue;
+            let otherMember: Member | undefined;
+            try {
+                otherMember = await Member.findOneOrFail({
+                    where: { id: other.user_id, guild_id: other.guild_id },
+                    relations: { user: true, roles: true },
+                });
+            } catch {
+                // member might not exist (e.g. left guild)
+            }
+            await emitEvent({
+                event: "VOICE_STATE_UPDATE",
+                data: {
+                    ...other.toPublicVoiceState(),
+                    member: otherMember?.toPublicMember?.(),
+                },
+                guild_id: other.guild_id,
+                channel_id: other.channel_id,
+                user_id: other.user_id,
+            } as VoiceStateUpdateEvent);
+        }
+    }
 
     //If it's null it means that we are leaving the channel and this event is not needed
     if ((isNew || isChanged) && voiceState.channel_id !== null) {

@@ -34,29 +34,36 @@ export async function Close(this: WebSocket, code: number, reason: Buffer) {
             where: { user_id: this.user_id },
         });
 
-        // clear the voice state for this session if user was in voice channel
+        // Only clear voice state if this session owned it; if user has other sessions (e.g. streamer + viewer tabs), reassign to another so streamer stays in voice
         if (voiceState && voiceState.session_id === this.session_id && voiceState.channel_id) {
-            const prevGuildId = voiceState.guild_id;
-            const prevChannelId = voiceState.channel_id;
+            const remainingSessions = await Session.find({
+                where: { user_id: this.user_id },
+            });
+            if (remainingSessions.length > 0) {
+                voiceState.session_id = remainingSessions[0].session_id;
+                await voiceState.save();
+            } else {
+                const prevGuildId = voiceState.guild_id;
+                const prevChannelId = voiceState.channel_id;
 
-            // @ts-expect-error channel_id is nullable
-            voiceState.channel_id = null;
-            // @ts-expect-error guild_id is nullable
-            voiceState.guild_id = null;
-            voiceState.self_stream = false;
-            voiceState.self_video = false;
-            await voiceState.save();
+                // @ts-expect-error channel_id is nullable
+                voiceState.channel_id = null;
+                // @ts-expect-error guild_id is nullable
+                voiceState.guild_id = null;
+                voiceState.self_stream = false;
+                voiceState.self_video = false;
+                await voiceState.save();
 
-            // let the users in previous guild/channel know that user disconnected
-            await emitEvent({
-                event: "VOICE_STATE_UPDATE",
-                data: {
-                    ...voiceState.toPublicVoiceState(),
-                    guild_id: prevGuildId, // have to send the previous guild_id because that's what client expects for disconnect messages
-                },
-                guild_id: prevGuildId,
-                channel_id: prevChannelId,
-            } as VoiceStateUpdateEvent);
+                await emitEvent({
+                    event: "VOICE_STATE_UPDATE",
+                    data: {
+                        ...voiceState.toPublicVoiceState(),
+                        guild_id: prevGuildId,
+                    },
+                    guild_id: prevGuildId,
+                    channel_id: prevChannelId,
+                } as VoiceStateUpdateEvent);
+            }
         }
     }
 

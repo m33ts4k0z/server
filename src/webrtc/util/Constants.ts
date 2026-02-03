@@ -29,6 +29,8 @@ export enum VoiceOPCodes {
     RESUME = 7,
     HELLO = 8,
     RESUMED = 9,
+    /** Viewer signals they are ready to receive video (triggers keyframe request) */
+    VIEWER_READY = 10,
     VIDEO = 12,
     CLIENT_DISCONNECT = 13,
     SESSION_UPDATE = 14,

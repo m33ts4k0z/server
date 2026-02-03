@@ -26,7 +26,13 @@ export async function onSelectProtocol(this: WebRtcWebSocket, payload: VoicePayl
     // UDP protocol not currently supported. Maybe in the future?
     if (data.protocol !== "webrtc") return this.close(4000, "only webrtc protocol supported currently");
 
-    const response = await mediaServer.onOffer(this.webRtcClient, data.sdp!, data.codecs ?? []);
+    let response;
+    try {
+        response = await mediaServer.onOffer(this.webRtcClient, data.sdp!, data.codecs ?? []);
+    } catch (err) {
+        console.error("[WebRTC] onOffer failed (client may be remote – check WRTC_PUBLIC_IP and UDP ports):", err);
+        return this.close(4010, "voice offer failed");
+    }
 
     await Send(this, {
         op: VoiceOPCodes.SESSION_DESCRIPTION,
