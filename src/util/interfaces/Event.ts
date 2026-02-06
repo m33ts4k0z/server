@@ -425,6 +425,15 @@ export interface TypingStartEvent extends Event {
     };
 }
 
+export interface TypingStopEvent extends Event {
+    event: "TYPING_STOP";
+    data: {
+        channel_id: string;
+        user_id: string;
+        guild_id?: string;
+    };
+}
+
 export interface UserUpdateEvent extends Event {
     event: "USER_UPDATE";
     data: Omit<User, "data">;
@@ -686,6 +695,7 @@ export type EventData =
     | MessageReactionRemoveEmojiEvent
     | PresenceUpdateEvent
     | TypingStartEvent
+    | TypingStopEvent
     | UserUpdateEvent
     | UserDeleteEvent
     | UserConnectionsUpdateEvent
@@ -747,6 +757,7 @@ export enum EVENTEnum {
     MessageReactionRemoveEmoji = "MESSAGE_REACTION_REMOVE_EMOJI",
     PresenceUpdate = "PRESENCE_UPDATE",
     TypingStart = "TYPING_START",
+    TypingStop = "TYPING_STOP",
     UserUpdate = "USER_UPDATE",
     UserDelete = "USER_DELETE",
     UserConnectionsUpdate = "USER_CONNECTIONS_UPDATE",
@@ -807,6 +818,7 @@ export type EVENT =
     | "MESSAGE_REACTION_REMOVE_EMOJI"
     | "PRESENCE_UPDATE"
     | "TYPING_START"
+    | "TYPING_STOP"
     | "USER_UPDATE"
     | "USER_DELETE"
     | "USER_CONNECTIONS_UPDATE"

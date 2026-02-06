@@ -239,6 +239,7 @@ async function consume(this: WebSocket, opts: EventOpts) {
         case "MESSAGE_REACTION_REMOVE_ALL":
         case "MESSAGE_REACTION_REMOVE_EMOJI":
         case "TYPING_START":
+        case "TYPING_STOP":
             // only gets send if the user is alowed to view the current channel
             if (!permission.has("VIEW_CHANNEL")) return;
             break;

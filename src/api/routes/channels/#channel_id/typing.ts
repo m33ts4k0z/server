@@ -17,7 +17,7 @@
 */
 
 import { route } from "@spacebar/api";
-import { Channel, emitEvent, Member, TypingStartEvent, User } from "@spacebar/util";
+import { Channel, emitEvent, Member, TypingStartEvent, TypingStopEvent, User } from "@spacebar/util";
 import { Request, Response, Router } from "express";
 
 const router: Router = Router({ mergeParams: true });
@@ -61,6 +61,36 @@ router.post(
                 guild_id: channel.guild_id,
             },
         } as TypingStartEvent);
+
+        res.sendStatus(204);
+    },
+);
+
+router.delete(
+    "/",
+    route({
+        permission: "SEND_MESSAGES",
+        responses: {
+            204: {},
+            404: {},
+            403: {},
+        },
+    }),
+    async (req: Request, res: Response) => {
+        const { channel_id } = req.params as { [key: string]: string };
+        const user_id = req.user_id;
+        const channel = await Channel.findOneOrFail({
+            where: { id: channel_id },
+        });
+        await emitEvent({
+            event: "TYPING_STOP",
+            channel_id,
+            data: {
+                channel_id,
+                user_id,
+                guild_id: channel.guild_id,
+            },
+        } as TypingStopEvent);
 
         res.sendStatus(204);
     },
