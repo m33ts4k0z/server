@@ -185,8 +185,12 @@ export async function onVideo(this: WebRtcWebSocket, payload: VoicePayload) {
                 op: VoiceOPCodes.VIDEO,
                 d: {
                     user_id: this.user_id,
-                    // can never send audio ssrc as 0, it will mess up client state for some reason. send server generated ssrc as backup
-                    audio_ssrc: ssrcs.audio_ssrc ?? this.webRtcClient!.getIncomingStreamSSRCs().audio_ssrc,
+                    // Send 0 when no audio consumer exists on this client's transport.
+                    // The old fallback (getIncomingStreamSSRCs) sent a generated SSRC that doesn't
+                    // match any consumer, causing phantom recvonly transceivers with wrong SSRCs.
+                    // Note: in onVideo, the consumer was JUST created above, so ssrcs.audio_ssrc
+                    // should always be defined here. The ?? 0 is just a safety net.
+                    audio_ssrc: ssrcs.audio_ssrc ?? 0,
                     video_ssrc: ssrcs.video_ssrc ?? 0,
                     rtx_ssrc: ssrcs.rtx_ssrc ?? 0,
                     streams: d.streams?.map((x) => ({
@@ -362,7 +366,12 @@ export async function subscribeToProducers(this: WebRtcWebSocket): Promise<void>
                     op: VoiceOPCodes.VIDEO,
                     d: {
                         user_id: client.user_id,
-                        audio_ssrc: ssrcs.audio_ssrc ?? client.getIncomingStreamSSRCs().audio_ssrc,
+                        // Send 0 when no consumer exists (no audio producer from this user yet).
+                        // The old fallback (getIncomingStreamSSRCs) sent a generated SSRC that doesn't
+                        // correspond to any consumer, causing the client to create phantom recvonly
+                        // transceivers with wrong SSRCs that break audio demux.
+                        // The client correctly ignores audio_ssrc=0 (doesn't create a transceiver).
+                        audio_ssrc: ssrcs.audio_ssrc ?? 0,
                         video_ssrc: ssrcs.video_ssrc ?? 0,
                         rtx_ssrc: ssrcs.rtx_ssrc ?? 0,
                         video_pt: codecs.video_pt,
