@@ -26,12 +26,14 @@ import os from "os";
 import { red, bold, yellow, cyan, blueBright, redBright } from "picocolors";
 import { initStats } from "./stats";
 import { config } from "dotenv";
+import path from "path";
 
-config({ quiet: true });
+const serverRoot = path.resolve(__dirname, "..", "..");
+config({ path: path.join(serverRoot, ".env"), quiet: true });
+
 import { spawnSync, execSync } from "child_process";
 import { centerString, Logo } from "@spacebar/util";
 import fs from "fs";
-import path from "path";
 
 const cores = process.env.THREADS ? parseInt(process.env.THREADS) : 1;
 

@@ -17,7 +17,8 @@
 */
 
 import { WebSocket } from "@spacebar/gateway";
-import { emitEvent, PresenceUpdateEvent, PrivateSessionProjection, Session, SessionsReplace, User, VoiceState, VoiceStateUpdateEvent } from "@spacebar/util";
+import { emitEvent, Member, PresenceUpdateEvent, PrivateSessionProjection, Session, SessionsReplace, User, VoiceState, VoiceStateUpdateEvent } from "@spacebar/util";
+import { presenceLog } from "../util/PresenceDebug.js";
 
 export async function Close(this: WebSocket, code: number, reason: Buffer) {
     console.log("[WebSocket] closed", code, reason.toString());
@@ -27,13 +28,18 @@ export async function Close(this: WebSocket, code: number, reason: Buffer) {
     this.inflate?.close();
     this.removeAllListeners();
 
-    if (this.session_id) {
-        await Session.delete({ session_id: this.session_id });
+    // Use the session id that was actually stored in the DB (Identify may use token's session_id, not socket's TEMP_ id).
+    const sessionIdToDelete = this.session?.session_id ?? this.session_id;
+    let wasOnlySession = false;
+    if (sessionIdToDelete && this.user_id) {
+        wasOnlySession = (await Session.count({ where: { user_id: this.user_id } })) === 1;
+    }
+    if (sessionIdToDelete) {
+        await Session.delete({ session_id: sessionIdToDelete });
 
         // Clean voice state for this session on any disconnect (close, crash, network drop).
-        // Look up by session_id so we clear even if user_id is unset (e.g. edge case); normally we have user_id after Identify.
         const voiceState = await VoiceState.findOne({
-            where: { session_id: this.session_id },
+            where: { session_id: sessionIdToDelete },
         });
 
         // If this session was in a channel, clear it and notify others; if user has other sessions (e.g. streamer + viewer tabs), reassign to another so streamer stays in voice
@@ -76,6 +82,10 @@ export async function Close(this: WebSocket, code: number, reason: Buffer) {
             status: "offline",
         };
 
+        // When this connection closed we deleted its session; if it was the last one, user is offline.
+        // We use wasOnlySession (pre-delete count) because post-delete find can still return the removed row.
+        const status = wasOnlySession || sessions.length === 0 ? "offline" : (session.getPublicStatus?.() ?? (session as { status?: string }).status ?? "offline");
+
         // TODO
         // If a user was deleted, they may still be connected to gateway,
         // which will cause this to throw when they disconnect.
@@ -83,16 +93,46 @@ export async function Close(this: WebSocket, code: number, reason: Buffer) {
         const userOrId = await User.getPublicUser(this.user_id).catch(() => ({
             id: this.user_id,
         }));
+        const presencePayload = {
+            user: userOrId,
+            activities: session?.activities ?? [],
+            client_status: session?.client_status ?? {},
+            status,
+        };
+
+        presenceLog(
+            "Close PRESENCE_UPDATE",
+            "user_id",
+            this.user_id,
+            "status",
+            status,
+            "wasOnlySession",
+            wasOnlySession,
+            "sessions_length",
+            sessions.length,
+            "guild_id",
+            "none (single emit)",
+        );
+        presenceLog("emitting PRESENCE_UPDATE with id =", this.user_id);
 
         await emitEvent({
             event: "PRESENCE_UPDATE",
             user_id: this.user_id,
-            data: {
-                user: userOrId,
-                activities: session.activities,
-                client_status: session?.client_status,
-                status: session.getPublicStatus?.() ?? session.status,
-            },
+            data: presencePayload,
         } as PresenceUpdateEvent);
+
+        const members = await Member.find({
+            where: { id: this.user_id },
+            select: ["guild_id"],
+        });
+        for (const m of members) {
+            presenceLog("Close PRESENCE_UPDATE per guild", "guild_id", m.guild_id, "user_id", this.user_id, "status", status);
+            await emitEvent({
+                event: "PRESENCE_UPDATE",
+                guild_id: m.guild_id,
+                user_id: this.user_id,
+                data: presencePayload,
+            } as PresenceUpdateEvent);
+        }
     }
 }

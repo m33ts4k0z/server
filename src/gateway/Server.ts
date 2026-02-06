@@ -23,6 +23,7 @@ import ws from "ws";
 import { Connection } from "./events/Connection";
 import http from "http";
 import { cleanupOnStartup } from "./util/Utils";
+import { presenceLog } from "./util/PresenceDebug.js";
 import { randomString } from "@spacebar/api";
 
 export class Server {
@@ -66,6 +67,11 @@ export class Server {
         await initEvent();
         // temporary fix
         await cleanupOnStartup();
+
+        const presenceDebugVar = (process.env.LOG_PRESENCE_DEBUG || "").trim();
+        console.log(
+            `[Gateway] LOG_PRESENCE_DEBUG=${presenceDebugVar === "" ? "(not set)" : presenceDebugVar} -> presence logging ${presenceDebugVar === "1" ? "enabled" : "disabled"}`,
+        );
 
         if (!this.server.listening) {
             this.server.listen(this.port);

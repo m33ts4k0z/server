@@ -21,6 +21,7 @@ import { WebSocket, Payload, handlePresenceUpdate, OPCODES, Send } from "@spaceb
 import murmur from "murmurhash-js/murmurhash3_gc";
 import { check } from "./instanceOf";
 import { LazyRequestSchema } from "@spacebar/schemas";
+import { presenceLog } from "../util/PresenceDebug.js";
 
 // TODO: only show roles/members that have access to this channel
 // TODO: config: to list all members (even those who are offline) sorted by role, or just those who are online
@@ -110,7 +111,8 @@ async function getMembers(guild_id: string, range: [number, number]) {
         for (const member of role_members) {
             const roles = member.roles.filter((x: Role) => x.id !== guild_id).map((x: Role) => x.id);
 
-            const session: Session | undefined = getMostRelevantSession(member.user.sessions);
+            const sessions = member.user.sessions ?? [];
+            const session: Session | undefined = getMostRelevantSession(sessions);
 
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
@@ -132,13 +134,43 @@ async function getMembers(guild_id: string, range: [number, number]) {
                 },
             };
 
+            if (sessions.length === 0) {
+                item.member.presence.status = "offline";
+                offlineItems.push(item);
+                group.count--;
+                presenceLog("getMembers member", "user_id", member.user.id, "sessions_count", 0, "session_status", "none", "final_status", "offline");
+                continue;
+            }
+
             if (!session || session.status == "invisible" || session.status == "offline") {
                 item.member.presence.status = "offline";
                 offlineItems.push(item);
                 group.count--;
+                presenceLog(
+                    "getMembers member",
+                    "user_id",
+                    member.user.id,
+                    "sessions_count",
+                    sessions.length,
+                    "session_status",
+                    session?.status,
+                    "final_status",
+                    item.member.presence.status,
+                );
                 continue;
             }
 
+            presenceLog(
+                "getMembers member",
+                "user_id",
+                member.user.id,
+                "sessions_count",
+                sessions.length,
+                "session_status",
+                session?.status,
+                "final_status",
+                item.member.presence.status,
+            );
             items.push(item);
         }
         members = other_members;

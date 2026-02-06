@@ -1,4 +1,5 @@
-import { VoiceState } from "@spacebar/util";
+import { Session, VoiceState } from "@spacebar/util";
+import { presenceLog } from "./PresenceDebug.js";
 
 export function parseStreamKey(streamKey: string): {
     type: "guild" | "call";
@@ -40,6 +41,10 @@ export function generateStreamKey(type: "guild" | "call", guildId: string | unde
 // TODO: remove this when Server.stop() is fixed so that it waits for all websocket connections to run their
 // respective Close event listener function for session cleanup
 export async function cleanupOnStartup(): Promise<void> {
+    const sessionCountBefore = await Session.count();
+    const voiceStateCountBefore = await VoiceState.count();
+    presenceLog("cleanupOnStartup before", "sessions", sessionCountBefore, "voice_states", voiceStateCountBefore);
+
     // TODO: how is this different from clearing the table?
     //await VoiceState.update(
     //	{},
@@ -54,4 +59,9 @@ export async function cleanupOnStartup(): Promise<void> {
     //);
 
     await VoiceState.clear();
+    await Session.clear();
+
+    const sessionCountAfter = await Session.count();
+    const voiceStateCountAfter = await VoiceState.count();
+    presenceLog("cleanupOnStartup after", "sessions", sessionCountAfter, "voice_states", voiceStateCountAfter);
 }
