@@ -44,7 +44,8 @@ export type RouteResponse = {
 
 export interface RouteOptions {
     permission?: PermissionResolvable;
-    right?: RightResolvable;
+    /** Require any one of these rights (OPERATOR or MANAGE_USERS for admin panel). */
+    right?: RightResolvable | RightResolvable[];
     requestBody?: `${string}Schema`; // typescript interface name
     responses?: {
         [status: number]: {
@@ -102,11 +103,12 @@ export function route(opts: RouteOptions) {
         }
 
         if (opts.right) {
-            const required = new Rights(opts.right);
+            const requiredList = Array.isArray(opts.right) ? opts.right : [opts.right];
             req.rights = await getRights(req.user_id);
 
-            if (!req.rights || !req.rights.has(required)) {
-                throw SpacebarApiErrors.MISSING_RIGHTS.withParams(opts.right as string);
+            const hasAny = req.rights && requiredList.some((r) => req.rights!.has(new Rights(r)));
+            if (!hasAny) {
+                throw SpacebarApiErrors.MISSING_RIGHTS.withParams(requiredList.join(" or "));
             }
         }
 

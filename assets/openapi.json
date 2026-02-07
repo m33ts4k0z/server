@@ -13303,7 +13303,10 @@
         },
         "/_spacebar/admin/users/": {
             "get": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []
@@ -13327,11 +13330,145 @@
                 "tags": [
                     "_spacebar"
                 ]
+            },
+            "post": {
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "No description available"
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "_spacebar"
+                ]
+            }
+        },
+        "/_spacebar/admin/users/{user_id}/": {
+            "get": {
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No description available"
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "user_id"
+                    }
+                ],
+                "tags": [
+                    "_spacebar"
+                ]
+            },
+            "patch": {
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No description available"
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "user_id"
+                    }
+                ],
+                "tags": [
+                    "_spacebar"
+                ]
             }
         },
         "/_spacebar/admin/users/{user_id}/delete/": {
             "get": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []
@@ -13397,7 +13534,10 @@
         },
         "/_spacebar/admin/media/sticker/": {
             "get": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []
@@ -13425,7 +13565,10 @@
         },
         "/_spacebar/admin/Guilds/": {
             "get": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []
@@ -13453,7 +13596,10 @@
         },
         "/_spacebar/admin/Guilds/{guild_id}/force_join/": {
             "post": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []
@@ -13502,7 +13648,10 @@
         },
         "/_spacebar/admin/Configuration/ReloadConfig/": {
             "post": {
-                "x-right-required": "OPERATOR",
+                "x-right-required": [
+                    "OPERATOR",
+                    "MANAGE_USERS"
+                ],
                 "security": [
                     {
                         "bearer": []

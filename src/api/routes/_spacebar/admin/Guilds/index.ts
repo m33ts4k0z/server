@@ -25,7 +25,7 @@ const router = Router({ mergeParams: true });
 router.get(
     "/",
     route({
-        right: "OPERATOR",
+        right: ["OPERATOR", "MANAGE_USERS"],
         responses: {
             200: {},
             403: { body: "APIErrorResponse" },

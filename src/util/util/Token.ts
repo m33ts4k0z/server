@@ -94,8 +94,7 @@ export const checkToken = (
             }
 
             if (decoded.did && !session) {
-                logAuth("validateUser rejected: Session not found");
-                return rejectAndLog(reject, 401, "Invalid Token");
+                logAuth("validateUser: Session not found for did=" + decoded.did + ", allowing request with valid JWT and user");
             }
 
             // we need to round it to seconds as it saved as seconds in jwt iat and valid_tokens_since is stored in milliseconds

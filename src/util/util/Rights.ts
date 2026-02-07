@@ -113,6 +113,7 @@ export async function getRights(
 		in_behalf?: (keyof User)[];
 	} = {} **/
 ) {
-    const user = await User.findOneOrFail({ where: { id: user_id } });
-    return new Rights(user.rights);
+    const user = await User.findOneOrFail({ where: { id: user_id }, select: ["rights"] });
+    const raw = user.rights;
+    return new Rights(raw === undefined || raw === null ? "0" : String(raw));
 }

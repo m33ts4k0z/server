@@ -19,13 +19,15 @@
 import { route } from "@spacebar/api";
 import { User } from "@spacebar/util";
 import { Request, Response, Router } from "express";
+import bcrypt from "bcrypt";
+import crypto from "node:crypto";
 
 const router = Router({ mergeParams: true });
 
 router.get(
     "/",
     route({
-        right: "OPERATOR",
+        right: ["OPERATOR", "MANAGE_USERS"],
         responses: {
             200: {},
             403: { body: "APIErrorResponse" },
@@ -33,7 +35,7 @@ router.get(
     }),
     async (req: Request, res: Response) => {
         const users = await User.find({
-            select: ["id", "username", "discriminator", "bot", "created_at", "mfa_enabled", "webauthn_enabled", "disabled", "deleted"],
+            select: ["id", "username", "discriminator", "bot", "created_at", "mfa_enabled", "webauthn_enabled", "disabled", "deleted", "rights"],
         });
         res.json(
             users.map((u) => ({
@@ -46,8 +48,53 @@ router.get(
                 webauthn_enabled: u.webauthn_enabled,
                 disabled: u.disabled,
                 deleted: u.deleted,
+                rights: u.rights,
             })),
         );
+    },
+);
+
+/** POST /_spacebar/admin/users - Create user (admin). Body: username, email?, password?, rights? */
+router.post(
+    "/",
+    route({
+        right: ["OPERATOR", "MANAGE_USERS"],
+        responses: {
+            201: {},
+            403: { body: "APIErrorResponse" },
+        },
+    }),
+    async (req: Request, res: Response) => {
+        const body = (req.body || {}) as { username?: string; email?: string; password?: string; rights?: string | number };
+        const username = body.username?.trim();
+        if (!username || username.length < 2) {
+            return res.status(400).json({ message: "username is required (min 2 characters)" });
+        }
+        let password = body.password;
+        const generatedPassword = !password;
+        if (!password) {
+            password = crypto
+                .randomBytes(16)
+                .toString("base64")
+                .replace(/[+/=]/g, (c) => ({ "+": "-", "/": "_", "=": "" })[c] ?? "");
+        }
+        const hash = await bcrypt.hash(password, 12);
+        const user = await User.register({
+            username,
+            email: body.email,
+            password: hash,
+            bot: false,
+        });
+        if (body.rights !== undefined) {
+            await User.update({ id: user.id }, { rights: String(body.rights) });
+        }
+        const created = await User.findOne({
+            where: { id: user.id },
+            select: ["id", "username", "discriminator", "email", "rights", "created_at"],
+        });
+        const payload = created ? { ...created } : { id: user.id };
+        if (generatedPassword) (payload as Record<string, unknown>).generated_password = password;
+        res.status(201).json(payload);
     },
 );
 

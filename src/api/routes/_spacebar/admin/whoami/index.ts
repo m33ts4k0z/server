@@ -31,13 +31,16 @@ router.get(
     }),
     async (req: Request, res: Response) => {
         const rights = await getRights(req.user_id!);
+        const bitfield = rights?.bitfield ?? BigInt(req.user?.rights ?? 0);
+        const rightsNum = bitfield <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(bitfield) : 0;
         res.json({
             id: req.user_id,
             username: req.user?.username,
             discriminator: req.user?.discriminator,
             bot: req.user?.bot ?? false,
             flags: req.user?.flags ?? 0,
-            rights: (rights?.bitfield != null ? Number(rights.bitfield) : req.user?.rights) ?? 0,
+            rights: rightsNum,
+            rights_string: String(bitfield),
             mfa_enabled: req.user?.mfa_enabled ?? false,
             webauthn_enabled: req.user?.webauthn_enabled ?? false,
         });
