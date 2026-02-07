@@ -517,6 +517,13 @@ export async function onIdentify(this: WebSocket, data: Payload) {
     const allSessions = sessions.concat(this.session!).map((x) => x.toPrivateGatewayDeviceInfo());
     const findAndGenerateSessionReplaceTime = taskSw.getElapsedAndReset();
 
+    const presencePayload = {
+        user: user.toPublicUser(),
+        activities: this.session!.activities,
+        client_status: this.session!.client_status,
+        status: this.session!.getPublicStatus(),
+    };
+
     const [{ elapsed: emitSessionsReplaceTime }, { elapsed: emitPresenceUpdateTime }] = await Promise.all([
         timePromise(() =>
             emitEvent({
@@ -529,15 +536,20 @@ export async function onIdentify(this: WebSocket, data: Payload) {
             emitEvent({
                 event: "PRESENCE_UPDATE",
                 user_id: this.user_id,
-                data: {
-                    user: user.toPublicUser(),
-                    activities: this.session!.activities,
-                    client_status: this.session!.client_status,
-                    status: this.session!.getPublicStatus(),
-                },
+                data: presencePayload,
             } as PresenceUpdateEvent),
         ),
     ]);
+
+    // Emit PRESENCE_UPDATE per guild so other guild members (who listen on guild_id) see this user as online
+    for (const m of members) {
+        await emitEvent({
+            event: "PRESENCE_UPDATE",
+            guild_id: m.guild_id,
+            user_id: this.user_id,
+            data: presencePayload,
+        } as PresenceUpdateEvent);
+    }
 
     taskSw.reset();
     // Build READY

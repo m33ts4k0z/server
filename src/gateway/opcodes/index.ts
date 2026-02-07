@@ -50,6 +50,7 @@ export default {
     18: onStreamCreate,
     19: onStreamDelete,
     20: onStreamWatch,
+    22: () => {}, // Stream_Set_Paused – client sends; no server action needed
     36: onRequestChannelStatuses,
     37: onGuildSubscriptionsBulk,
     40: onHeartbeat, // same as 1, except with extra data
